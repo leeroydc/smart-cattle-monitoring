@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '../contexts/AuthContext';
+import { UserCircle, Shield, Key } from 'lucide-react';
 
 const Profile = () => {
   const { userRole } = useAuth();
@@ -16,42 +17,34 @@ const Profile = () => {
         </Button>
       </div>
       
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Account Type</label>
-              <div className="text-lg font-bold text-primary">{userRole}</div>
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <div className="flex items-center space-x-4">
+            <UserCircle className="w-16 h-16 text-primary" />
+            <div>
+              <CardTitle>Account Information</CardTitle>
+              <p className="text-muted-foreground">Your profile details</p>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Access Level</label>
-              <div className="text-lg">
-                {userRole === 'Management' ? 'Full Access' : 'Limited Access'}
-              </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center space-x-4 p-4 bg-accent/20 rounded-lg">
+            <Shield className="w-8 h-8 text-primary" />
+            <div>
+              <p className="font-medium">Account Type</p>
+              <p className="text-lg text-primary">{userRole}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button className="w-full" variant="outline">
-              Edit Profile
-            </Button>
-            <Button className="w-full" variant="outline">
-              Change Password
-            </Button>
-            <Button className="w-full" variant="outline">
-              Update Contact Information
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          <div className="flex items-center space-x-4 p-4 bg-accent/20 rounded-lg">
+            <Key className="w-8 h-8 text-primary" />
+            <div>
+              <p className="font-medium">Access Level</p>
+              <p className="text-lg">{userRole === 'Management' ? 'Full Access' : 'Limited Access'}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
