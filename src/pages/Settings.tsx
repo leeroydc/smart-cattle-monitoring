@@ -1,24 +1,31 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const Settings = () => {
-  const settingsCategories = [
-    {
-      title: 'Cattle Management',
-      options: ['Add New Cattle', 'Remove Cattle Record', 'Edit Cattle Details'],
-    },
-    {
-      title: 'System Preferences',
-      options: ['Notification Settings', 'Data Export Options', 'Language Settings'],
-    },
-    {
-      title: 'Account Settings',
-      options: ['Change Password', 'Update Email', 'Two-Factor Authentication'],
-    },
-  ];
+  const [newCattleId, setNewCattleId] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
+  const handleAddCattle = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Add cattle logic here
+    setNewCattleId('');
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Change password logic here
+    setNewPassword('');
+  };
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -29,26 +36,61 @@ const Settings = () => {
         </Button>
       </div>
       
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {settingsCategories.map((category) => (
-          <Card key={category.title}>
-            <CardHeader>
-              <CardTitle>{category.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {category.options.map((option) => (
-                <Button
-                  key={option}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  {option}
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Add New Cattle</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="w-full">Add Cattle</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Cattle</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleAddCattle} className="space-y-4">
+                  <Input
+                    placeholder="Cattle ID"
+                    value={newCattleId}
+                    onChange={(e) => setNewCattleId(e.target.value)}
+                    required
+                  />
+                  <Button type="submit" className="w-full">Add</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Change Password</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="w-full">Change Password</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Change Password</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <Input
+                    type="password"
+                    placeholder="New Password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                  <Button type="submit" className="w-full">Update Password</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
