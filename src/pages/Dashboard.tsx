@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Thermometer, Users, Activity, DollarSign, Utensils, Clock } from 'lucide-react';
+import { Thermometer, Users, Activity, DollarSign, Utensils, Clock, Leaf, Wheat, Apple, Droplet, Info, Copyright } from 'lucide-react';
 
 const Dashboard = () => {
-  // Sample data for charts
   const temperatureData = Array.from({ length: 24 }, (_, i) => ({
     hour: `${i}:00`,
     temperature: 37 + Math.sin(i / 3) + Math.random(),
@@ -30,6 +29,15 @@ const Dashboard = () => {
     { name: 'Grass', value: 30 },
     { name: 'Grains', value: 20 },
     { name: 'Supplements', value: 10 },
+  ];
+
+  const [selectedNutrient, setSelectedNutrient] = useState<string | null>(null);
+
+  const nutritionalRecommendations = [
+    { name: 'Hay', percentage: 40, icon: <Wheat className="w-5 h-5" />, details: 'Rich in fiber, essential for digestion' },
+    { name: 'Fresh Grass', percentage: 30, icon: <Leaf className="w-5 h-5" />, details: 'Source of protein and nutrients' },
+    { name: 'Grains', percentage: 20, icon: <Apple className="w-5 h-5" />, details: 'Energy source for growth' },
+    { name: 'Water', percentage: 10, icon: <Droplet className="w-5 h-5" />, details: 'Essential for hydration' },
   ];
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
@@ -92,25 +100,33 @@ const Dashboard = () => {
       </div>
 
       <div className="grid gap-6 mt-8 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="md:col-span-2 lg:col-span-1">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center space-x-2">
-              <Utensils className="w-4 h-4 text-primary" />
-              <CardTitle>Daily Feeding Schedule</CardTitle>
+              <Utensils className="w-5 h-5 text-primary" />
+              <CardTitle>Nutritional Recommendations</CardTitle>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {feedingSchedule.map((schedule, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-accent/10 rounded-lg">
+          <CardContent className="relative">
+            <div className="grid grid-cols-2 gap-4">
+              {nutritionalRecommendations.map((nutrient, index) => (
+                <div
+                  key={nutrient.name}
+                  className={`p-4 rounded-lg border transition-all cursor-pointer transform hover:scale-105 ${
+                    selectedNutrient === nutrient.name ? 'bg-primary/10 border-primary' : 'bg-accent/10'
+                  }`}
+                  onClick={() => setSelectedNutrient(nutrient.name)}
+                >
                   <div className="flex items-center space-x-3">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    {nutrient.icon}
                     <div>
-                      <p className="font-medium">{schedule.time}</p>
-                      <p className="text-sm text-muted-foreground">{schedule.meal}</p>
+                      <p className="font-medium">{nutrient.name}</p>
+                      <p className="text-sm text-muted-foreground">{nutrient.percentage}%</p>
                     </div>
                   </div>
-                  <span className="font-bold">{schedule.amount}</span>
+                  {selectedNutrient === nutrient.name && (
+                    <p className="mt-2 text-sm text-muted-foreground">{nutrient.details}</p>
+                  )}
                 </div>
               ))}
             </div>
@@ -158,6 +174,13 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <footer className="text-center pt-8 border-t">
+        <div className="flex items-center justify-center space-x-2 text-muted-foreground">
+          <Copyright className="w-4 h-4" />
+          <p>{new Date().getFullYear()} Cattle Management System. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 };

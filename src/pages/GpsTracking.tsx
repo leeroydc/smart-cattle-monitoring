@@ -1,8 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Navigation, AlertTriangle, Battery, Signal, Compass } from 'lucide-react';
+import { 
+  MapPin, 
+  Navigation, 
+  AlertTriangle, 
+  Battery, 
+  Signal, 
+  Compass, 
+  Thermometer,
+  Droplet,
+  Sun,
+  Moon,
+  Copyright
+} from 'lucide-react';
 
 interface CattleLocation {
   area: 'Feeding' | 'Water' | 'Resting';
@@ -21,7 +32,19 @@ const GpsTracking = () => {
 
   const [alerts, setAlerts] = useState<string[]>([]);
 
-  // Simulate RFID detection updates
+  const getAreaIcon = (area: string) => {
+    switch (area) {
+      case 'Feeding':
+        return <Sun className="w-5 h-5 text-yellow-500" />;
+      case 'Water':
+        return <Droplet className="w-5 h-5 text-blue-500" />;
+      case 'Resting':
+        return <Moon className="w-5 h-5 text-purple-500" />;
+      default:
+        return <MapPin className="w-5 h-5 text-primary" />;
+    }
+  };
+
   useEffect(() => {
     const interval = setInterval(() => {
       setLocations(prev => prev.map(loc => {
@@ -29,7 +52,6 @@ const GpsTracking = () => {
         const newBattery = Math.max(0, Math.min(100, loc.batteryLevel + (Math.random() * 2 - 1)));
         const newSignal = Math.max(0, Math.min(100, loc.signalStrength + (Math.random() * 2 - 1)));
         
-        // Generate alerts for low battery or signal
         if (newBattery < 20) {
           setAlerts(prev => [...prev, `Low battery alert in ${loc.area} area`]);
         }
@@ -65,7 +87,7 @@ const GpsTracking = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <MapPin className="w-5 h-5 text-primary" />
+                  {getAreaIcon(location.area)}
                   <CardTitle>{location.area} Area</CardTitle>
                 </div>
                 <Navigation className="w-5 h-5 text-muted-foreground" />
@@ -96,6 +118,14 @@ const GpsTracking = () => {
                   <span className={`font-medium ${location.signalStrength < 50 ? 'text-yellow-500' : 'text-green-500'}`}>
                     {Math.round(location.signalStrength)}%
                   </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Thermometer className="w-4 h-4" />
+                    <span>Temperature</span>
+                  </div>
+                  <span className="font-medium">38.5°C</span>
                 </div>
               </div>
 
@@ -144,6 +174,13 @@ const GpsTracking = () => {
           </div>
         </div>
       </div>
+
+      <footer className="text-center pt-8 border-t">
+        <div className="flex items-center justify-center space-x-2 text-muted-foreground">
+          <Copyright className="w-4 h-4" />
+          <p>{new Date().getFullYear()} Cattle Management System. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 };
