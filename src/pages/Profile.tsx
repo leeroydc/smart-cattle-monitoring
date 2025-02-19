@@ -40,7 +40,7 @@ const Profile = () => {
             <Key className="w-8 h-8 text-primary" />
             <div>
               <p className="font-medium">Access Level</p>
-              <p className="text-lg">{userRole === 'Management' ? 'Full Access' : 'Limited Access'}</p>
+              <p className="text-lg">{userRole === 'admin' ? 'Full Access' : 'Limited Access'}</p>
             </div>
           </div>
         </CardContent>

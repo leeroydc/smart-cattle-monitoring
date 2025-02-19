@@ -5,30 +5,26 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'Rancher' | 'Management'>('Rancher');
   const { login, signup } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLogin) {
-      login(email, password);
-    } else {
-      signup(email, password, role);
+    try {
+      if (isLogin) {
+        await login(email, password);
+      } else {
+        await signup(email, password);
+      }
+      navigate('/dashboard');
+    } catch (error) {
+      // Error is handled by AuthContext
     }
-    navigate('/dashboard');
   };
 
   return (
@@ -59,19 +55,6 @@ const Login = () => {
                 required
               />
             </div>
-            {!isLogin && (
-              <div className="space-y-2">
-                <Select value={role} onValueChange={(value: 'Rancher' | 'Management') => setRole(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Rancher">Rancher</SelectItem>
-                    <SelectItem value="Management">Management</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
             <Button type="submit" className="w-full">
               {isLogin ? 'Sign In' : 'Sign Up'}
             </Button>
