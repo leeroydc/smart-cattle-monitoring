@@ -72,22 +72,11 @@ const Dashboard = () => {
     readyForSale: 25
   };
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-background p-4 border rounded-lg shadow-lg">
-          <p className="font-medium">{payload[0].name}</p>
-          <p className="text-primary">{`${payload[0].value}%`}</p>
-          <p className="text-sm text-muted-foreground">
-            {payload[0].payload.details}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
+  const feedingSchedule = [
+    { time: 'Morning', meal: 'Hay and Grains', amount: '15 kg' },
+    { time: 'Afternoon', meal: 'Fresh Grass', amount: '10 kg' },
+    { time: 'Evening', meal: 'Mixed Feed', amount: '12 kg' },
+  ];
 
   const [selectedNutrient, setSelectedNutrient] = useState<string | null>(null);
 
@@ -97,6 +86,23 @@ const Dashboard = () => {
     { name: 'Grains', percentage: 20, icon: <Apple className="w-5 h-5" />, details: 'Energy source for growth' },
     { name: 'Water', percentage: 10, icon: <Droplet className="w-5 h-5" />, details: 'Essential for hydration' },
   ];
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-background p-4 border rounded-lg shadow-lg">
+          <p className="font-medium">{`${payload[0].feed_type}`}</p>
+          <p className="text-primary">{`${payload[0].percentage}%`}</p>
+          <p className="text-sm text-muted-foreground">
+            {payload[0].details}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="animate-fade-in space-y-6">
