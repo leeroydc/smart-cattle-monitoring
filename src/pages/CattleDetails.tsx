@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +15,7 @@ interface Cattle {
   id: string;
   tag_number: string;
   temperature: number;
+  weight: number;
   health_status: string;
   location: string;
 }
@@ -48,6 +48,7 @@ const CattleDetails = () => {
           <TableRow>
             <TableHead>Tag Number</TableHead>
             <TableHead>Temperature (°C)</TableHead>
+            <TableHead>Weight (kg)</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Health Status</TableHead>
           </TableRow>
@@ -57,6 +58,7 @@ const CattleDetails = () => {
             <TableRow key={cow.id}>
               <TableCell>{cow.tag_number}</TableCell>
               <TableCell>{cow.temperature}</TableCell>
+              <TableCell>{cow.weight}</TableCell>
               <TableCell>{cow.location}</TableCell>
               <TableCell>
                 <span

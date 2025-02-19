@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -23,19 +24,23 @@ import { supabase } from '@/integrations/supabase/client';
 interface AddCattleForm {
   tagNumber: string;
   temperature: number;
+  weight: number;
   healthStatus: 'Healthy' | 'Under Treatment' | 'Critical';
   location: 'Feeding' | 'Water' | 'Resting';
 }
 
 const Settings = () => {
   const [newPassword, setNewPassword] = useState('');
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [formData, setFormData] = useState<AddCattleForm>({
     tagNumber: '',
     temperature: 37.5,
+    weight: 500,
     healthStatus: 'Healthy',
     location: 'Resting'
   });
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleAddCattle = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +51,7 @@ const Settings = () => {
         .insert([{
           tag_number: formData.tagNumber,
           temperature: formData.temperature,
+          weight: formData.weight,
           health_status: formData.healthStatus,
           location: formData.location
         }])
@@ -58,6 +64,7 @@ const Settings = () => {
       setFormData({
         tagNumber: '',
         temperature: 37.5,
+        weight: 500,
         healthStatus: 'Healthy',
         location: 'Resting'
       });
@@ -66,10 +73,25 @@ const Settings = () => {
     }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Change password logic here
-    setNewPassword('');
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      toast.success('Password updated successfully');
+      setNewPassword('');
+      setIsPasswordDialogOpen(false);
+    } catch (error: any) {
+      toast.error('Failed to update password: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -113,6 +135,16 @@ const Settings = () => {
                       step="0.1"
                       value={formData.temperature}
                       onChange={(e) => setFormData(prev => ({ ...prev, temperature: parseFloat(e.target.value) }))}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Weight (kg)</label>
+                    <Input
+                      type="number"
+                      value={formData.weight}
+                      onChange={(e) => setFormData(prev => ({ ...prev, weight: parseFloat(e.target.value) }))}
                       required
                     />
                   </div>
@@ -163,13 +195,16 @@ const Settings = () => {
             <CardTitle>Change Password</CardTitle>
           </CardHeader>
           <CardContent>
-            <Dialog>
+            <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="w-full">Change Password</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Change Password</DialogTitle>
+                  <DialogDescription>
+                    Enter your new password below.
+                  </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleChangePassword} className="space-y-4">
                   <Input
@@ -178,8 +213,12 @@ const Settings = () => {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
+                    disabled={isLoading}
+                    minLength={6}
                   />
-                  <Button type="submit" className="w-full">Update Password</Button>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? 'Updating...' : 'Update Password'}
+                  </Button>
                 </form>
               </DialogContent>
             </Dialog>

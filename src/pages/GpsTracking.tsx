@@ -160,15 +160,15 @@ const GpsTracking = () => {
 
       <div className="aspect-video overflow-hidden rounded-lg border bg-muted relative">
         <img 
-          src="/grazing-cattle.jpg" 
+          src="/cattle-grazing.jpg" 
           alt="Grazing Cattle"
-          className="w-full h-full object-cover opacity-50"
+          className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold">Live GPS Tracking</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-2xl font-bold text-white">Live GPS Tracking</h2>
+            <p className="text-white/90">
               Total cattle tracked: {locations.reduce((acc, loc) => acc + loc.count, 0)}
             </p>
           </div>
