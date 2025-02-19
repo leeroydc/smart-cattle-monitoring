@@ -1,59 +1,82 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  userRole: 'Rancher' | 'Management';
-  login: (email: string, password: string) => void;
-  logout: () => void;
-  signup: (email: string, password: string, role: 'Rancher' | 'Management') => void;
+  userRole: 'rancher' | 'admin';
+  session: Session | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  signup: (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState<'Rancher' | 'Management'>('Rancher');
+  const [userRole, setUserRole] = useState<'rancher' | 'admin'>('rancher');
+  const [session, setSession] = useState<Session | null>(null);
 
-  const showLoadingToast = () => {
-    return toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 8000)),
-      {
-        loading: 'Processing...',
-        success: 'Completed successfully',
-        error: 'Something went wrong',
-      }
-    );
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsAuthenticated(!!session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+
+    toast.success('Successfully logged in');
   };
 
-  const login = (email: string, password: string) => {
-    showLoadingToast();
-    setTimeout(() => {
-      setIsAuthenticated(true);
-      toast.success('Successfully logged in');
-    }, 8000);
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+
+    toast.success('Successfully logged out');
   };
 
-  const logout = () => {
-    showLoadingToast();
-    setTimeout(() => {
-      setIsAuthenticated(false);
-      toast.success('Successfully logged out');
-    }, 8000);
-  };
+  const signup = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
-  const signup = (email: string, password: string, role: 'Rancher' | 'Management') => {
-    showLoadingToast();
-    setTimeout(() => {
-      setIsAuthenticated(true);
-      setUserRole(role);
-      toast.success('Account created successfully');
-    }, 8000);
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+
+    toast.success('Account created successfully');
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userRole, login, logout, signup }}>
+    <AuthContext.Provider value={{ isAuthenticated, userRole, session, login, logout, signup }}>
       {children}
     </AuthContext.Provider>
   );
