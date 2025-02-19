@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -5,9 +6,16 @@ import { Thermometer, Users, Activity, DollarSign, Utensils, Clock, Leaf, Wheat,
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 
+interface FeedDistribution {
+  id: string;
+  feed_type: string;
+  percentage: number;
+  details?: string;
+}
+
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [feedingData, setFeedingData] = useState([]);
+  const [feedingData, setFeedingData] = useState<FeedDistribution[]>([]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -27,7 +35,26 @@ const Dashboard = () => {
       .select('*');
     
     if (data) {
-      setFeedingData(data);
+      const enrichedData = data.map(item => ({
+        ...item,
+        details: getFeedDetails(item.feed_type)
+      }));
+      setFeedingData(enrichedData);
+    }
+  };
+
+  const getFeedDetails = (feedType: string): string => {
+    switch (feedType) {
+      case 'Hay':
+        return 'Rich in fiber, essential for digestion';
+      case 'Grass':
+        return 'Source of protein and nutrients';
+      case 'Grains':
+        return 'Energy source for growth';
+      case 'Supplements':
+        return 'Additional nutrients for health';
+      default:
+        return 'Essential feed component';
     }
   };
 
@@ -45,28 +72,6 @@ const Dashboard = () => {
     readyForSale: 25
   };
 
-  const feedingSchedule = [
-    { time: 'Morning', meal: 'Hay and Grains', amount: '15 kg' },
-    { time: 'Afternoon', meal: 'Fresh Grass', amount: '10 kg' },
-    { time: 'Evening', meal: 'Mixed Feed', amount: '12 kg' },
-  ];
-
-  const feedingData = [
-    { name: 'Hay', value: 40 },
-    { name: 'Grass', value: 30 },
-    { name: 'Grains', value: 20 },
-    { name: 'Supplements', value: 10 },
-  ];
-
-  const [selectedNutrient, setSelectedNutrient] = useState<string | null>(null);
-
-  const nutritionalRecommendations = [
-    { name: 'Hay', percentage: 40, icon: <Wheat className="w-5 h-5" />, details: 'Rich in fiber, essential for digestion' },
-    { name: 'Fresh Grass', percentage: 30, icon: <Leaf className="w-5 h-5" />, details: 'Source of protein and nutrients' },
-    { name: 'Grains', percentage: 20, icon: <Apple className="w-5 h-5" />, details: 'Energy source for growth' },
-    { name: 'Water', percentage: 10, icon: <Droplet className="w-5 h-5" />, details: 'Essential for hydration' },
-  ];
-
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -83,6 +88,15 @@ const Dashboard = () => {
     }
     return null;
   };
+
+  const [selectedNutrient, setSelectedNutrient] = useState<string | null>(null);
+
+  const nutritionalRecommendations = [
+    { name: 'Hay', percentage: 40, icon: <Wheat className="w-5 h-5" />, details: 'Rich in fiber, essential for digestion' },
+    { name: 'Fresh Grass', percentage: 30, icon: <Leaf className="w-5 h-5" />, details: 'Source of protein and nutrients' },
+    { name: 'Grains', percentage: 20, icon: <Apple className="w-5 h-5" />, details: 'Energy source for growth' },
+    { name: 'Water', percentage: 10, icon: <Droplet className="w-5 h-5" />, details: 'Essential for hydration' },
+  ];
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -217,7 +231,7 @@ const Dashboard = () => {
               </PieChart>
             </ResponsiveContainer>
             <div className="mt-4 grid grid-cols-2 gap-4">
-              {feedingData.map((feed: any, index) => (
+              {feedingData.map((feed, index) => (
                 <div key={feed.feed_type} className="flex items-center space-x-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                   <span className="text-sm">{feed.feed_type} ({feed.percentage}%)</span>
