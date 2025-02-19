@@ -1,9 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Thermometer, Users, Activity, DollarSign, Utensils, Clock, Leaf, Wheat, Apple, Droplet, Info, Copyright } from 'lucide-react';
+import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [feedingData, setFeedingData] = useState([]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    fetchFeedDistribution();
+  }, []);
+
+  const fetchFeedDistribution = async () => {
+    const { data, error } = await supabase
+      .from('feed_distribution')
+      .select('*');
+    
+    if (data) {
+      setFeedingData(data);
+    }
+  };
+
   const temperatureData = Array.from({ length: 24 }, (_, i) => ({
     hour: `${i}:00`,
     temperature: 37 + Math.sin(i / 3) + Math.random(),
@@ -42,11 +69,28 @@ const Dashboard = () => {
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-background p-4 border rounded-lg shadow-lg">
+          <p className="font-medium">{payload[0].name}</p>
+          <p className="text-primary">{`${payload[0].value}%`}</p>
+          <p className="text-sm text-muted-foreground">
+            {payload[0].payload.details}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="animate-fade-in space-y-6">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-primary">Cattle Management System</h1>
-        <p className="text-muted-foreground mt-2">Efficient Livestock Management Solution</p>
+        <p className="text-muted-foreground mt-2">
+          {format(currentTime, 'PPpp')}
+        </p>
       </div>
       
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -162,15 +206,24 @@ const Dashboard = () => {
                   innerRadius={60}
                   outerRadius={80}
                   paddingAngle={5}
-                  dataKey="value"
+                  dataKey="percentage"
+                  nameKey="feed_type"
                 >
                   {feedingData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              {feedingData.map((feed: any, index) => (
+                <div key={feed.feed_type} className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                  <span className="text-sm">{feed.feed_type} ({feed.percentage}%)</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
