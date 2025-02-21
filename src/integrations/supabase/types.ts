@@ -18,6 +18,7 @@ export type Database = {
           tag_number: string
           temperature: number | null
           updated_at: string | null
+          weight: number | null
         }
         Insert: {
           created_at?: string | null
@@ -27,6 +28,7 @@ export type Database = {
           tag_number: string
           temperature?: number | null
           updated_at?: string | null
+          weight?: number | null
         }
         Update: {
           created_at?: string | null
@@ -36,6 +38,7 @@ export type Database = {
           tag_number?: string
           temperature?: number | null
           updated_at?: string | null
+          weight?: number | null
         }
         Relationships: []
       }

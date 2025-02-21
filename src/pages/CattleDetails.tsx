@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +19,8 @@ interface Cattle {
   weight: number;
   health_status: string;
   location: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const CattleDetails = () => {
@@ -33,7 +36,18 @@ const CattleDetails = () => {
       .select('*');
 
     if (data) {
-      setCattle(data);
+      // Ensure each record has the required properties
+      const formattedData: Cattle[] = data.map(record => ({
+        id: record.id,
+        tag_number: record.tag_number,
+        temperature: record.temperature || 37.5,
+        weight: record.weight || 500, // Default weight if not set
+        health_status: record.health_status || 'Healthy',
+        location: record.location || 'Resting',
+        created_at: record.created_at,
+        updated_at: record.updated_at
+      }));
+      setCattle(formattedData);
     }
   };
 
