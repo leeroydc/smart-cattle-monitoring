@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Plus, Trash2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AddCattleForm {
@@ -27,6 +28,15 @@ interface AddCattleForm {
   weight: number;
   healthStatus: 'Healthy' | 'Under Treatment' | 'Critical';
   location: 'Feeding' | 'Water' | 'Resting';
+}
+
+interface Cattle {
+  id: string;
+  tag_number: string;
+  temperature: number;
+  weight: number;
+  health_status: string;
+  location: string;
 }
 
 const Settings = () => {
@@ -40,10 +50,30 @@ const Settings = () => {
     location: 'Resting'
   });
   const [isOpen, setIsOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [cattleList, setCattleList] = useState<Cattle[]>([]);
+  const [selectedCattleId, setSelectedCattleId] = useState<string>('');
+
+  useEffect(() => {
+    fetchCattleList();
+  }, []);
+
+  const fetchCattleList = async () => {
+    const { data, error } = await supabase
+      .from('cattle')
+      .select('*');
+
+    if (data) {
+      setCattleList(data);
+    } else if (error) {
+      toast.error('Failed to fetch cattle list');
+    }
+  };
 
   const handleAddCattle = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
     try {
       const { data, error } = await supabase
@@ -59,7 +89,10 @@ const Settings = () => {
 
       if (error) throw error;
 
-      toast.success('Cattle added successfully');
+      toast.success('Cattle added successfully!', {
+        description: `Tag number: ${formData.tagNumber}`
+      });
+      
       setIsOpen(false);
       setFormData({
         tagNumber: '',
@@ -68,8 +101,38 @@ const Settings = () => {
         healthStatus: 'Healthy',
         location: 'Resting'
       });
+      
+      fetchCattleList(); // Refresh the list
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error('Failed to add cattle: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteCattle = async () => {
+    if (!selectedCattleId) {
+      toast.error('Please select a cattle to delete');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('cattle')
+        .delete()
+        .eq('id', selectedCattleId);
+
+      if (error) throw error;
+
+      toast.success('Cattle deleted successfully');
+      setIsDeleteDialogOpen(false);
+      setSelectedCattleId('');
+      fetchCattleList(); // Refresh the list
+    } catch (error: any) {
+      toast.error('Failed to delete cattle: ' + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -106,12 +169,15 @@ const Settings = () => {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Add New Cattle</CardTitle>
+            <CardTitle>Cattle Management</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full">Add Cattle</Button>
+                <Button className="w-full" variant="default">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add New Cattle
+                </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
@@ -183,8 +249,62 @@ const Settings = () => {
                     </Select>
                   </div>
 
-                  <Button type="submit" className="w-full">Add</Button>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? 'Adding...' : 'Add Cattle'}
+                  </Button>
                 </form>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full" variant="destructive">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Cattle
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete Cattle</DialogTitle>
+                  <DialogDescription>
+                    Select the cattle you want to remove from the system.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <Select
+                    value={selectedCattleId}
+                    onValueChange={setSelectedCattleId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select cattle to delete" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cattleList.map((cattle) => (
+                        <SelectItem key={cattle.id} value={cattle.id}>
+                          Tag: {cattle.tag_number} - {cattle.health_status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {selectedCattleId && (
+                    <div className="flex items-center p-3 space-x-2 bg-destructive/10 rounded-md">
+                      <AlertCircle className="w-4 h-4 text-destructive" />
+                      <p className="text-sm text-destructive">
+                        This action cannot be undone. The cattle will be permanently removed from the system.
+                      </p>
+                    </div>
+                  )}
+
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    disabled={!selectedCattleId || isLoading}
+                    onClick={handleDeleteCattle}
+                  >
+                    {isLoading ? 'Deleting...' : 'Confirm Delete'}
+                  </Button>
+                </div>
               </DialogContent>
             </Dialog>
           </CardContent>
