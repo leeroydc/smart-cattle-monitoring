@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Thermometer, Users, Activity, DollarSign, Utensils, Clock, Leaf, Wheat, Apple, Droplet, Info, Copyright } from 'lucide-react';
+import { LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Thermometer, Users, Activity, DollarSign, Utensils, Clock, Leaf, Wheat, Apple, Droplet, Copyright } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -105,7 +104,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-6 p-6">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-primary">Cattle Management System</h1>
         <p className="text-muted-foreground mt-2">
@@ -113,7 +112,7 @@ const Dashboard = () => {
         </p>
       </div>
       
-      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="transform hover:scale-105 transition-transform">
           <CardHeader>
             <div className="flex items-center space-x-2">
@@ -163,27 +162,67 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      <div className="grid gap-6 mt-8 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      <div className="grid gap-6 lg:grid-cols-12">
+        <Card className="lg:col-span-5">
+          <CardHeader>
+            <CardTitle>Feed Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={feedingData}
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="percentage"
+                    nameKey="feed_type"
+                  >
+                    {feedingData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              {feedingData.map((feed, index) => (
+                <div key={feed.feed_type} className="flex items-center space-x-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }} 
+                  />
+                  <span className="text-sm truncate">
+                    {feed.feed_type} ({feed.percentage}%)
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-4">
           <CardHeader>
             <div className="flex items-center space-x-2">
               <Utensils className="w-5 h-5 text-primary" />
-              <CardTitle>Nutritional Recommendations</CardTitle>
+              <CardTitle>Nutritional Info</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="relative">
-            <div className="grid grid-cols-2 gap-4">
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4">
               {nutritionalRecommendations.map((nutrient, index) => (
                 <div
                   key={nutrient.name}
-                  className={`p-4 rounded-lg border transition-all cursor-pointer transform hover:scale-105 ${
+                  className={`p-3 rounded-lg border transition-all cursor-pointer hover:scale-105 ${
                     selectedNutrient === nutrient.name ? 'bg-primary/10 border-primary' : 'bg-accent/10'
                   }`}
                   onClick={() => setSelectedNutrient(nutrient.name)}
                 >
                   <div className="flex items-center space-x-3">
                     {nutrient.icon}
-                    <div>
+                    <div className="flex-1">
                       <p className="font-medium">{nutrient.name}</p>
                       <p className="text-sm text-muted-foreground">{nutrient.percentage}%</p>
                     </div>
@@ -197,52 +236,26 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Average Temperature (24h)</CardTitle>
+            <CardTitle>Temperature (24h)</CardTitle>
           </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={temperatureData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="hour" />
-                <YAxis domain={[35, 40]} />
-                <Tooltip />
-                <Line type="monotone" dataKey="temperature" stroke="#2563eb" />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Feed Distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={feedingData}
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="percentage"
-                  nameKey="feed_type"
-                >
-                  {feedingData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              {feedingData.map((feed, index) => (
-                <div key={feed.feed_type} className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                  <span className="text-sm">{feed.feed_type} ({feed.percentage}%)</span>
-                </div>
-              ))}
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={temperatureData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="hour" />
+                  <YAxis domain={[35, 40]} />
+                  <Tooltip />
+                  <Line 
+                    type="monotone" 
+                    dataKey="temperature" 
+                    stroke="#2563eb" 
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
