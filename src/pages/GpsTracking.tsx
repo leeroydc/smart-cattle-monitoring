@@ -1,6 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 import { 
   MapPin, 
   Navigation, 
@@ -12,8 +15,11 @@ import {
   Droplet,
   Sun,
   Moon,
+  RefreshCw,
+  Satellite,
   Copyright
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CattleLocation {
   area: 'Feeding' | 'Water' | 'Resting';
@@ -24,13 +30,100 @@ interface CattleLocation {
 }
 
 const GpsTracking = () => {
-  const [locations, setLocations] = useState<CattleLocation[]>([
-    { area: 'Feeding', count: 85, batteryLevel: 75, signalStrength: 90, lastUpdate: new Date().toISOString() },
-    { area: 'Water', count: 45, batteryLevel: 85, signalStrength: 85, lastUpdate: new Date().toISOString() },
-    { area: 'Resting', count: 70, batteryLevel: 65, signalStrength: 95, lastUpdate: new Date().toISOString() },
-  ]);
-
+  const [locations, setLocations] = useState<CattleLocation[]>([]);
   const [alerts, setAlerts] = useState<string[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+
+  const fetchLocations = async () => {
+    setIsRefreshing(true);
+    try {
+      const { data: gpsData, error } = await supabase
+        .from('gps_tracking')
+        .select(`
+          id,
+          location,
+          battery_level,
+          signal_strength,
+          created_at,
+          cattle_id,
+          cattle (
+            health_status
+          )
+        `);
+
+      if (error) throw error;
+
+      // Process and group the data
+      const locationCounts: { [key: string]: number } = {
+        Feeding: 0,
+        Water: 0,
+        Resting: 0
+      };
+
+      const batteryLevels: { [key: string]: number[] } = {
+        Feeding: [],
+        Water: [],
+        Resting: []
+      };
+
+      const signalStrengths: { [key: string]: number[] } = {
+        Feeding: [],
+        Water: [],
+        Resting: []
+      };
+
+      gpsData.forEach(item => {
+        const location = item.location as 'Feeding' | 'Water' | 'Resting';
+        if (location) {
+          locationCounts[location]++;
+          if (item.battery_level) batteryLevels[location].push(item.battery_level);
+          if (item.signal_strength) signalStrengths[location].push(item.signal_strength);
+        }
+      });
+
+      const newLocations: CattleLocation[] = Object.keys(locationCounts).map(area => ({
+        area: area as 'Feeding' | 'Water' | 'Resting',
+        count: locationCounts[area],
+        batteryLevel: batteryLevels[area].length 
+          ? batteryLevels[area].reduce((a, b) => a + b, 0) / batteryLevels[area].length 
+          : 100,
+        signalStrength: signalStrengths[area].length 
+          ? signalStrengths[area].reduce((a, b) => a + b, 0) / signalStrengths[area].length 
+          : 100,
+        lastUpdate: new Date().toISOString()
+      }));
+
+      setLocations(newLocations);
+
+      // Check for alerts
+      newLocations.forEach(loc => {
+        if (loc.batteryLevel < 20) {
+          setAlerts(prev => [...prev, `Low battery alert in ${loc.area} area`]);
+        }
+        if (loc.signalStrength < 50) {
+          setAlerts(prev => [...prev, `Poor signal strength in ${loc.area} area`]);
+        }
+      });
+    } catch (error: any) {
+      toast.error('Failed to fetch GPS data: ' + error.message);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLocations();
+    let interval: NodeJS.Timeout;
+
+    if (autoRefresh) {
+      interval = setInterval(fetchLocations, 30000); // Refresh every 30 seconds
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [autoRefresh]);
 
   const getAreaIcon = (area: string) => {
     switch (area) {
@@ -45,40 +138,44 @@ const GpsTracking = () => {
     }
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLocations(prev => prev.map(loc => {
-        const newCount = loc.count + Math.floor(Math.random() * 5) - 2;
-        const newBattery = Math.max(0, Math.min(100, loc.batteryLevel + (Math.random() * 2 - 1)));
-        const newSignal = Math.max(0, Math.min(100, loc.signalStrength + (Math.random() * 2 - 1)));
-        
-        if (newBattery < 20) {
-          setAlerts(prev => [...prev, `Low battery alert in ${loc.area} area`]);
-        }
-        if (newSignal < 50) {
-          setAlerts(prev => [...prev, `Poor signal strength in ${loc.area} area`]);
-        }
+  const handleManualRefresh = () => {
+    fetchLocations();
+    toast.success('GPS data refreshed');
+  };
 
-        return {
-          ...loc,
-          count: newCount,
-          batteryLevel: newBattery,
-          signalStrength: newSignal,
-          lastUpdate: new Date().toISOString()
-        };
-      }));
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const toggleAutoRefresh = () => {
+    setAutoRefresh(!autoRefresh);
+    toast.info(autoRefresh ? 'Auto-refresh disabled' : 'Auto-refresh enabled');
+  };
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">GPS & RFID Tracking</h1>
-        <Button variant="outline" onClick={() => window.history.back()}>
-          Back
-        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">GPS & RFID Tracking</h1>
+          <p className="text-muted-foreground mt-1">Real-time location monitoring</p>
+        </div>
+        <div className="flex gap-4">
+          <Button
+            variant="outline"
+            onClick={toggleAutoRefresh}
+            className={autoRefresh ? 'bg-primary/10' : ''}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
+            Auto Refresh
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+          >
+            <Satellite className="w-4 h-4 mr-2" />
+            Refresh Now
+          </Button>
+          <Button variant="outline" onClick={() => window.history.back()}>
+            Back
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -90,7 +187,7 @@ const GpsTracking = () => {
                   {getAreaIcon(location.area)}
                   <CardTitle>{location.area} Area</CardTitle>
                 </div>
-                <Navigation className="w-5 h-5 text-muted-foreground" />
+                <Navigation className="w-5 h-5 text-muted-foreground animate-pulse" />
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
