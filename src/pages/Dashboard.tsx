@@ -1,8 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
-import { Thermometer, Users, Activity, DollarSign, Utensils, Clock, Leaf, Wheat, Apple, Droplet, Copyright } from 'lucide-react';
+import { 
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
+  Tooltip, ResponsiveContainer, Cell, Legend, PieChart, Pie 
+} from 'recharts';
+import { 
+  Thermometer, Users, Activity, DollarSign, 
+  Copyright, Scale, Heart 
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -13,9 +18,22 @@ interface FeedDistribution {
   details?: string;
 }
 
+interface WeightData {
+  range: string;
+  count: number;
+}
+
+interface HealthData {
+  status: string;
+  count: number;
+  color: string;
+}
+
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [feedingData, setFeedingData] = useState<FeedDistribution[]>([]);
+  const [weightData, setWeightData] = useState<WeightData[]>([]);
+  const [healthData, setHealthData] = useState<HealthData[]>([]);
   const [cattleStats, setCattleStats] = useState({
     totalCattle: 0,
     healthyCattle: 0,
@@ -34,6 +52,8 @@ const Dashboard = () => {
   useEffect(() => {
     fetchFeedDistribution();
     fetchCattleStats();
+    fetchWeightDistribution();
+    fetchHealthDistribution();
   }, []);
 
   const fetchCattleStats = async () => {
@@ -66,6 +86,62 @@ const Dashboard = () => {
     }
   };
 
+  const fetchWeightDistribution = async () => {
+    const { data: cattleData, error } = await supabase
+      .from('cattle')
+      .select('weight');
+
+    if (cattleData) {
+      const weightRanges: { [key: string]: number } = {
+        '300-400kg': 0,
+        '401-500kg': 0,
+        '501-600kg': 0,
+        '601-700kg': 0,
+        '700+kg': 0
+      };
+
+      cattleData.forEach(cattle => {
+        const weight = cattle.weight || 0;
+        if (weight <= 400) weightRanges['300-400kg']++;
+        else if (weight <= 500) weightRanges['401-500kg']++;
+        else if (weight <= 600) weightRanges['501-600kg']++;
+        else if (weight <= 700) weightRanges['601-700kg']++;
+        else weightRanges['700+kg']++;
+      });
+
+      setWeightData(Object.entries(weightRanges).map(([range, count]) => ({
+        range,
+        count
+      })));
+    }
+  };
+
+  const fetchHealthDistribution = async () => {
+    const { data: cattleData, error } = await supabase
+      .from('cattle')
+      .select('health_status');
+
+    if (cattleData) {
+      const healthCounts = {
+        'Healthy': 0,
+        'Under Treatment': 0,
+        'Critical': 0
+      };
+
+      cattleData.forEach(cattle => {
+        if (cattle.health_status) {
+          healthCounts[cattle.health_status as keyof typeof healthCounts]++;
+        }
+      });
+
+      setHealthData([
+        { status: 'Healthy', count: healthCounts['Healthy'], color: '#10B981' },
+        { status: 'Under Treatment', count: healthCounts['Under Treatment'], color: '#F59E0B' },
+        { status: 'Critical', count: healthCounts['Critical'], color: '#EF4444' }
+      ]);
+    }
+  };
+
   const getFeedDetails = (feedType: string): string => {
     switch (feedType) {
       case 'Hay':
@@ -92,11 +168,13 @@ const Dashboard = () => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-background p-4 border rounded-lg shadow-lg">
-          <p className="font-medium">{`${payload[0].payload.feed_type}`}</p>
-          <p className="text-primary">{`${payload[0].value}%`}</p>
-          <p className="text-sm text-muted-foreground">
-            {payload[0].payload.details}
-          </p>
+          <p className="font-medium">{label || payload[0].payload.status || payload[0].payload.range}</p>
+          <p className="text-primary">{payload[0].value} {label ? '%' : 'cattle'}</p>
+          {payload[0].payload.details && (
+            <p className="text-sm text-muted-foreground">
+              {payload[0].payload.details}
+            </p>
+          )}
         </div>
       );
     }
@@ -163,20 +241,21 @@ const Dashboard = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
-        {/* Feed Distribution Card - Now using BarChart */}
-        <Card className="lg:col-span-8">
+        <Card className="lg:col-span-6">
           <CardHeader>
-            <CardTitle>Feed Distribution</CardTitle>
+            <div className="flex items-center space-x-2">
+              <Activity className="w-5 h-5 text-primary" />
+              <CardTitle>Feed Distribution</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="h-[400px]">
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={feedingData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" domain={[0, 100]} />
                   <YAxis dataKey="feed_type" type="category" width={100} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend />
                   <Bar dataKey="percentage" fill="#8884d8">
                     {feedingData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -188,13 +267,87 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Temperature Chart */}
-        <Card className="lg:col-span-4">
+        <Card className="lg:col-span-6">
           <CardHeader>
-            <CardTitle>Temperature (24h)</CardTitle>
+            <div className="flex items-center space-x-2">
+              <Scale className="w-5 h-5 text-primary" />
+              <CardTitle>Weight Distribution</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="h-[400px]">
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={weightData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="range" />
+                  <YAxis />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="count" fill="#60A5FA">
+                    {weightData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={`hsl(${210 + index * 20}, 70%, 60%)`} 
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-6">
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <Heart className="w-5 h-5 text-primary" />
+              <CardTitle>Health Status Distribution</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={healthData}
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="count"
+                  >
+                    {healthData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {healthData.map((status) => (
+                <div 
+                  key={status.status} 
+                  className="flex items-center justify-center p-2 rounded-md"
+                  style={{ backgroundColor: `${status.color}20` }}
+                >
+                  <span className="text-sm font-medium" style={{ color: status.color }}>
+                    {status.status}: {status.count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-6">
+          <CardHeader>
+            <div className="flex items-center space-x-2">
+              <Thermometer className="w-5 h-5 text-primary" />
+              <CardTitle>Temperature (24h)</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={temperatureData}>
                   <CartesianGrid strokeDasharray="3 3" />
