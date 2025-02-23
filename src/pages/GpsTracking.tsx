@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -188,9 +189,14 @@ const GpsTracking = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-2xl font-bold">{location.count} cattle</p>
-                <Compass className="w-5 h-5 text-primary animate-pulse" />
+              <div className="flex flex-col space-y-2 bg-primary/5 p-4 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <p className="text-2xl font-bold">{location.count} cattle</p>
+                  <Compass className="w-5 h-5 text-primary animate-pulse" />
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Currently in {location.area.toLowerCase()} area
+                </div>
               </div>
               
               <div className="space-y-2">
