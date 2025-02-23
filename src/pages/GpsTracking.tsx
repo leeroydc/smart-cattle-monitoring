@@ -27,7 +27,6 @@ interface CattleLocation {
   batteryLevel: number;
   signalStrength: number;
   lastUpdate: string;
-  subLocations?: { name: string; count: number }[];
 }
 
 const GpsTracking = () => {
@@ -39,21 +38,12 @@ const GpsTracking = () => {
   const fetchLocations = async () => {
     setIsRefreshing(true);
     try {
-      const { data: gpsData, error } = await supabase
-        .from('gps_tracking')
-        .select(`
-          id,
-          location,
-          battery_level,
-          signal_strength,
-          created_at,
-          cattle_id,
-          cattle (
-            health_status
-          )
-        `);
+      // First, fetch all cattle to get accurate location counts
+      const { data: cattleData, error: cattleError } = await supabase
+        .from('cattle')
+        .select('location');
 
-      if (error) throw error;
+      if (cattleError) throw cattleError;
 
       const locationCounts: { [key: string]: number } = {
         Feeding: 0,
@@ -61,13 +51,19 @@ const GpsTracking = () => {
         Resting: 0
       };
 
-      // Track sub-locations for feeding area
-      const feedingSubLocations: { [key: string]: number } = {
-        'Feed Bunk': 0,
-        'Hay Area': 0,
-        'Grain Station': 0,
-        'Supplement Area': 0
-      };
+      // Count cattle in each location from the cattle table
+      cattleData.forEach(cattle => {
+        if (cattle.location && locationCounts.hasOwnProperty(cattle.location)) {
+          locationCounts[cattle.location]++;
+        }
+      });
+
+      // Fetch GPS tracking data for battery and signal information
+      const { data: gpsData, error: gpsError } = await supabase
+        .from('gps_tracking')
+        .select('location, battery_level, signal_strength');
+
+      if (gpsError) throw gpsError;
 
       const batteryLevels: { [key: string]: number[] } = {
         Feeding: [],
@@ -82,17 +78,9 @@ const GpsTracking = () => {
       };
 
       gpsData.forEach(item => {
-        const location = item.location as 'Feeding' | 'Water' | 'Resting';
-        if (location) {
-          locationCounts[location]++;
-          if (location === 'Feeding') {
-            // Randomly distribute cattle across feeding sub-locations for demo
-            const subLocations = Object.keys(feedingSubLocations);
-            const randomSubLocation = subLocations[Math.floor(Math.random() * subLocations.length)];
-            feedingSubLocations[randomSubLocation]++;
-          }
-          if (item.battery_level) batteryLevels[location].push(item.battery_level);
-          if (item.signal_strength) signalStrengths[location].push(item.signal_strength);
+        if (item.location && batteryLevels.hasOwnProperty(item.location)) {
+          if (item.battery_level) batteryLevels[item.location].push(item.battery_level);
+          if (item.signal_strength) signalStrengths[item.location].push(item.signal_strength);
         }
       });
 
@@ -105,17 +93,12 @@ const GpsTracking = () => {
         signalStrength: signalStrengths[area].length 
           ? signalStrengths[area].reduce((a, b) => a + b, 0) / signalStrengths[area].length 
           : 100,
-        lastUpdate: new Date().toISOString(),
-        ...(area === 'Feeding' && {
-          subLocations: Object.entries(feedingSubLocations).map(([name, count]) => ({
-            name,
-            count
-          }))
-        })
+        lastUpdate: new Date().toISOString()
       }));
 
       setLocations(newLocations);
 
+      // Check for alerts
       newLocations.forEach(loc => {
         if (loc.batteryLevel < 20) {
           setAlerts(prev => [...prev, `Low battery alert in ${loc.area} area`]);
@@ -218,17 +201,6 @@ const GpsTracking = () => {
                 <div className="text-sm text-muted-foreground">
                   Currently in {location.area.toLowerCase()} area
                 </div>
-                {location.area === 'Feeding' && location.subLocations && (
-                  <div className="mt-2 space-y-1 border-t pt-2">
-                    <p className="text-sm font-medium">Detailed Location Breakdown:</p>
-                    {location.subLocations.map((subLoc) => (
-                      <div key={subLoc.name} className="flex justify-between text-sm">
-                        <span>{subLoc.name}:</span>
-                        <span className="font-medium">{subLoc.count} cattle</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
               
               <div className="space-y-2">
