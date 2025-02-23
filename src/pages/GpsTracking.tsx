@@ -27,6 +27,7 @@ interface CattleLocation {
   batteryLevel: number;
   signalStrength: number;
   lastUpdate: string;
+  subLocations?: { name: string; count: number }[];
 }
 
 const GpsTracking = () => {
@@ -60,6 +61,14 @@ const GpsTracking = () => {
         Resting: 0
       };
 
+      // Track sub-locations for feeding area
+      const feedingSubLocations: { [key: string]: number } = {
+        'Feed Bunk': 0,
+        'Hay Area': 0,
+        'Grain Station': 0,
+        'Supplement Area': 0
+      };
+
       const batteryLevels: { [key: string]: number[] } = {
         Feeding: [],
         Water: [],
@@ -76,6 +85,12 @@ const GpsTracking = () => {
         const location = item.location as 'Feeding' | 'Water' | 'Resting';
         if (location) {
           locationCounts[location]++;
+          if (location === 'Feeding') {
+            // Randomly distribute cattle across feeding sub-locations for demo
+            const subLocations = Object.keys(feedingSubLocations);
+            const randomSubLocation = subLocations[Math.floor(Math.random() * subLocations.length)];
+            feedingSubLocations[randomSubLocation]++;
+          }
           if (item.battery_level) batteryLevels[location].push(item.battery_level);
           if (item.signal_strength) signalStrengths[location].push(item.signal_strength);
         }
@@ -90,7 +105,13 @@ const GpsTracking = () => {
         signalStrength: signalStrengths[area].length 
           ? signalStrengths[area].reduce((a, b) => a + b, 0) / signalStrengths[area].length 
           : 100,
-        lastUpdate: new Date().toISOString()
+        lastUpdate: new Date().toISOString(),
+        ...(area === 'Feeding' && {
+          subLocations: Object.entries(feedingSubLocations).map(([name, count]) => ({
+            name,
+            count
+          }))
+        })
       }));
 
       setLocations(newLocations);
@@ -197,6 +218,17 @@ const GpsTracking = () => {
                 <div className="text-sm text-muted-foreground">
                   Currently in {location.area.toLowerCase()} area
                 </div>
+                {location.area === 'Feeding' && location.subLocations && (
+                  <div className="mt-2 space-y-1 border-t pt-2">
+                    <p className="text-sm font-medium">Detailed Location Breakdown:</p>
+                    {location.subLocations.map((subLoc) => (
+                      <div key={subLoc.name} className="flex justify-between text-sm">
+                        <span>{subLoc.name}:</span>
+                        <span className="font-medium">{subLoc.count} cattle</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <div className="space-y-2">
