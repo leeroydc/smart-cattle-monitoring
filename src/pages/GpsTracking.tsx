@@ -178,6 +178,29 @@ const GpsTracking = () => {
         </div>
       </div>
 
+      {/* Add total count summary */}
+      <Card className="bg-primary/5">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            {locations.map((location) => (
+              <div 
+                key={location.area} 
+                className="flex flex-col items-center space-y-2 p-4 rounded-lg bg-background shadow-sm"
+              >
+                <div className="flex items-center space-x-2">
+                  {getAreaIcon(location.area)}
+                  <h3 className="font-semibold">{location.area}</h3>
+                </div>
+                <p className="text-3xl font-bold text-primary">
+                  {location.count}
+                </p>
+                <p className="text-sm text-muted-foreground">Cattle Present</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 md:grid-cols-3">
         {locations.map((location) => (
           <Card key={location.area} className="transform hover:scale-105 transition-transform">
@@ -191,7 +214,7 @@ const GpsTracking = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center bg-primary/5 p-3 rounded-lg">
                 <p className="text-2xl font-bold">{location.count} cattle</p>
                 <Compass className="w-5 h-5 text-primary animate-pulse" />
               </div>
