@@ -154,8 +154,10 @@ const GpsTracking = () => {
     <div className="animate-fade-in space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">GPS & RFID Tracking</h1>
-          <p className="text-muted-foreground mt-1">Real-time location monitoring</p>
+          <h1 className="text-3xl font-bold">GPS & RFID Monitoring</h1>
+          <p className="text-muted-foreground mt-1">
+            Real-time sensor monitoring and tracking
+          </p>
         </div>
         <div className="flex gap-4">
           <Button
@@ -164,7 +166,7 @@ const GpsTracking = () => {
             className={autoRefresh ? 'bg-primary/10' : ''}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
-            Auto Refresh
+            Auto Refresh Sensors
           </Button>
           <Button
             variant="outline"
@@ -172,7 +174,7 @@ const GpsTracking = () => {
             disabled={isRefreshing}
           >
             <Satellite className="w-4 h-4 mr-2" />
-            Refresh Now
+            Update Sensors
           </Button>
           <Button variant="outline" onClick={() => window.history.back()}>
             Back
@@ -271,9 +273,10 @@ const GpsTracking = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-white">Live GPS Tracking</h2>
+            <h2 className="text-2xl font-bold text-white">Live Sensor Data</h2>
             <p className="text-white/90">
-              Total cattle tracked: {locations.reduce((acc, loc) => acc + loc.count, 0)}
+              Connected sensors: {locations.length} areas | 
+              Total cattle monitored: {locations.reduce((acc, loc) => acc + loc.count, 0)}
             </p>
           </div>
         </div>
