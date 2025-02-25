@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,19 +44,9 @@ const GpsTracking = () => {
   const fetchLocations = async () => {
     setIsRefreshing(true);
     try {
-      // First, fetch cattle data with their locations
       const { data: cattleData, error: cattleError } = await supabase
         .from('cattle')
-        .select(`
-          tag_number,
-          location,
-          temperature,
-          health_status,
-          gps_tracking (
-            battery_level,
-            signal_strength
-          )
-        `)
+        .select('tag_number, location, temperature, health_status')
         .order('tag_number', { ascending: true });
 
       if (cattleError) throw cattleError;
@@ -74,6 +63,13 @@ const GpsTracking = () => {
         Resting: []
       };
 
+      cattleData.forEach(cattle => {
+        if (cattle.location && locationCounts.hasOwnProperty(cattle.location)) {
+          locationCounts[cattle.location]++;
+          cattleByLocation[cattle.location].push(cattle);
+        }
+      });
+
       const batteryLevels: { [key: string]: number[] } = {
         Feeding: [],
         Water: [],
@@ -86,24 +82,10 @@ const GpsTracking = () => {
         Resting: []
       };
 
-      // Process the joined data
-      cattleData.forEach(cattle => {
-        if (cattle.location && locationCounts.hasOwnProperty(cattle.location)) {
-          locationCounts[cattle.location]++;
-          cattleByLocation[cattle.location].push(cattle);
-          
-          // Get GPS tracking data if available
-          const gpsData = Array.isArray(cattle.gps_tracking) ? 
-            cattle.gps_tracking[0] : cattle.gps_tracking;
-
-          if (gpsData) {
-            if (gpsData.battery_level) {
-              batteryLevels[cattle.location].push(gpsData.battery_level);
-            }
-            if (gpsData.signal_strength) {
-              signalStrengths[cattle.location].push(gpsData.signal_strength);
-            }
-          }
+      cattleData.forEach(item => {
+        if (item.location && batteryLevels.hasOwnProperty(item.location)) {
+          if (item.battery_level) batteryLevels[item.location].push(item.battery_level);
+          if (item.signal_strength) signalStrengths[item.location].push(item.signal_strength);
         }
       });
 
@@ -122,8 +104,6 @@ const GpsTracking = () => {
 
       setLocations(newLocations);
 
-      // Set alerts for low battery or poor signal
-      setAlerts([]);  // Clear previous alerts
       newLocations.forEach(loc => {
         if (loc.batteryLevel < 20) {
           setAlerts(prev => [...prev, `Low battery alert in ${loc.area} area`]);
@@ -132,7 +112,6 @@ const GpsTracking = () => {
           setAlerts(prev => [...prev, `Poor signal strength in ${loc.area} area`]);
         }
       });
-
     } catch (error: any) {
       toast.error('Failed to fetch GPS data: ' + error.message);
     } finally {
@@ -285,6 +264,14 @@ const GpsTracking = () => {
                     {Math.round(location.signalStrength)}%
                   </span>
                 </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Thermometer className="w-4 h-4" />
+                    <span>Temperature</span>
+                  </div>
+                  <span className="font-medium">38.5°C</span>
+                </div>
               </div>
 
               <p className="text-sm text-muted-foreground">
@@ -315,6 +302,24 @@ const GpsTracking = () => {
           </CardContent>
         </Card>
       )}
+
+      <div className="aspect-video overflow-hidden rounded-lg border bg-muted relative">
+        <img 
+          src="/cattle-grazing.jpg" 
+          alt="Grazing Cattle"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold text-white">Live Sensor Data</h2>
+            <p className="text-white/90">
+              Connected sensors: {locations.length} areas | 
+              Total cattle monitored: {locations.reduce((acc, loc) => acc + loc.count, 0)}
+            </p>
+          </div>
+        </div>
+      </div>
 
       <footer className="text-center pt-8 border-t">
         <div className="flex items-center justify-center space-x-2 text-muted-foreground">
