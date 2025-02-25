@@ -1,27 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { 
-  MapPin, 
-  Navigation, 
-  AlertTriangle, 
-  Battery, 
-  Signal, 
-  Compass, 
-  Thermometer,
-  Droplet,
-  Sun,
-  Moon,
-  RefreshCw,
-  Satellite,
-  Copyright,
-  Eye
-} from 'lucide-react';
+import { Copyright } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { LocationCard } from '@/components/gps/LocationCard';
+import { AlertsCard } from '@/components/gps/AlertsCard';
+import { Header } from '@/components/gps/Header';
 
 interface CattleLocation {
   area: 'Feeding' | 'Water' | 'Resting';
@@ -45,7 +29,6 @@ const GpsTracking = () => {
   const fetchLocations = async () => {
     setIsRefreshing(true);
     try {
-      // First, fetch cattle data with their locations
       const { data: cattleData, error: cattleError } = await supabase
         .from('cattle')
         .select(`
@@ -86,13 +69,11 @@ const GpsTracking = () => {
         Resting: []
       };
 
-      // Process the joined data
       cattleData.forEach(cattle => {
         if (cattle.location && locationCounts.hasOwnProperty(cattle.location)) {
           locationCounts[cattle.location]++;
           cattleByLocation[cattle.location].push(cattle);
           
-          // Get GPS tracking data if available
           const gpsData = Array.isArray(cattle.gps_tracking) ? 
             cattle.gps_tracking[0] : cattle.gps_tracking;
 
@@ -122,8 +103,7 @@ const GpsTracking = () => {
 
       setLocations(newLocations);
 
-      // Set alerts for low battery or poor signal
-      setAlerts([]);  // Clear previous alerts
+      setAlerts([]);
       newLocations.forEach(loc => {
         if (loc.batteryLevel < 20) {
           setAlerts(prev => [...prev, `Low battery alert in ${loc.area} area`]);
@@ -153,19 +133,6 @@ const GpsTracking = () => {
     };
   }, [autoRefresh]);
 
-  const getAreaIcon = (area: string) => {
-    switch (area) {
-      case 'Feeding':
-        return <Sun className="w-5 h-5 text-yellow-500" />;
-      case 'Water':
-        return <Droplet className="w-5 h-5 text-blue-500" />;
-      case 'Resting':
-        return <Moon className="w-5 h-5 text-purple-500" />;
-      default:
-        return <MapPin className="w-5 h-5 text-primary" />;
-    }
-  };
-
   const handleManualRefresh = () => {
     fetchLocations();
     toast.success('GPS data refreshed');
@@ -178,143 +145,23 @@ const GpsTracking = () => {
 
   return (
     <div className="animate-fade-in space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">GPS & RFID Monitoring</h1>
-          <p className="text-muted-foreground mt-1">
-            Real-time sensor monitoring and tracking
-          </p>
-        </div>
-        <div className="flex gap-4">
-          <Button
-            variant="outline"
-            onClick={toggleAutoRefresh}
-            className={autoRefresh ? 'bg-primary/10' : ''}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
-            Auto Refresh Sensors
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleManualRefresh}
-            disabled={isRefreshing}
-          >
-            <Satellite className="w-4 h-4 mr-2" />
-            Update Sensors
-          </Button>
-          <Button variant="outline" onClick={() => window.history.back()}>
-            Back
-          </Button>
-        </div>
-      </div>
+      <Header
+        autoRefresh={autoRefresh}
+        isRefreshing={isRefreshing}
+        onToggleAutoRefresh={toggleAutoRefresh}
+        onManualRefresh={handleManualRefresh}
+      />
 
       <div className="grid gap-6 md:grid-cols-3">
         {locations.map((location) => (
-          <Card key={location.area} className="transform hover:scale-105 transition-transform">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  {getAreaIcon(location.area)}
-                  <CardTitle>{location.area} Area</CardTitle>
-                </div>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>{location.area} Area - Cattle Details</DialogTitle>
-                    </DialogHeader>
-                    <ScrollArea className="h-[400px] mt-4">
-                      <div className="space-y-4">
-                        {location.cattle.map((cow) => (
-                          <div key={cow.tag_number} className="p-4 border rounded-lg">
-                            <div className="flex justify-between items-center">
-                              <h3 className="font-medium">Tag #{cow.tag_number}</h3>
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                cow.health_status === 'Healthy' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : cow.health_status === 'Critical'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {cow.health_status}
-                              </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Temperature: {cow.temperature}°C
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col space-y-2 bg-primary/5 p-4 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <p className="text-2xl font-bold">{location.count} cattle</p>
-                  <Compass className="w-5 h-5 text-primary animate-pulse" />
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Currently in {location.area.toLowerCase()} area
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Battery className="w-4 h-4" />
-                    <span>Battery</span>
-                  </div>
-                  <span className={`font-medium ${location.batteryLevel < 20 ? 'text-red-500' : 'text-green-500'}`}>
-                    {Math.round(location.batteryLevel)}%
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Signal className="w-4 h-4" />
-                    <span>Signal</span>
-                  </div>
-                  <span className={`font-medium ${location.signalStrength < 50 ? 'text-yellow-500' : 'text-green-500'}`}>
-                    {Math.round(location.signalStrength)}%
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-sm text-muted-foreground">
-                Last updated: {new Date(location.lastUpdate).toLocaleTimeString()}
-              </p>
-            </CardContent>
-          </Card>
+          <LocationCard
+            key={location.area}
+            {...location}
+          />
         ))}
       </div>
 
-      {alerts.length > 0 && (
-        <Card className="border-yellow-500">
-          <CardHeader>
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="w-5 h-5 text-yellow-500" />
-              <CardTitle>System Alerts</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {alerts.slice(-3).map((alert, index) => (
-                <div key={index} className="flex items-center space-x-2 text-yellow-600">
-                  <AlertTriangle className="w-4 h-4" />
-                  <p>{alert}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <AlertsCard alerts={alerts} />
 
       <footer className="text-center pt-8 border-t">
         <div className="flex items-center justify-center space-x-2 text-muted-foreground">
