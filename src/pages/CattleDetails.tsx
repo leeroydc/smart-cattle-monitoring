@@ -11,6 +11,15 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Eye, Trash2, Syringe } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Cattle {
   id: string;
@@ -25,6 +34,8 @@ interface Cattle {
 
 const CattleDetails = () => {
   const [cattle, setCattle] = useState<Cattle[]>([]);
+  const [selectedCattle, setSelectedCattle] = useState<Cattle | null>(null);
+  const [isAdministeringMedicine, setIsAdministeringMedicine] = useState(false);
 
   useEffect(() => {
     fetchCattle();
@@ -33,15 +44,15 @@ const CattleDetails = () => {
   const fetchCattle = async () => {
     const { data, error } = await supabase
       .from('cattle')
-      .select('*');
+      .select('*')
+      .order('tag_number', { ascending: true }); // Sort by tag number
 
     if (data) {
-      // Ensure each record has the required properties
       const formattedData: Cattle[] = data.map(record => ({
         id: record.id,
         tag_number: record.tag_number,
         temperature: record.temperature || 37.5,
-        weight: record.weight || 500, // Default weight if not set
+        weight: record.weight || 500,
         health_status: record.health_status || 'Healthy',
         location: record.location || 'Resting',
         created_at: record.created_at,
@@ -49,6 +60,36 @@ const CattleDetails = () => {
       }));
       setCattle(formattedData);
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('cattle')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast.error('Failed to delete record');
+    } else {
+      toast.success('Record deleted successfully');
+      fetchCattle(); // Refresh the list
+    }
+  };
+
+  const handleAdministerMedicine = async (cattle: Cattle) => {
+    // In a real application, this would update inventory and cattle health records
+    const { error } = await supabase
+      .from('cattle')
+      .update({ health_status: 'Under Treatment' })
+      .eq('id', cattle.id);
+
+    if (error) {
+      toast.error('Failed to update treatment status');
+    } else {
+      toast.success('Medicine administered successfully');
+      fetchCattle(); // Refresh the list
+    }
+    setIsAdministeringMedicine(false);
   };
 
   const healthyCattle = cattle.filter((c) => c.health_status === 'Healthy');
@@ -65,6 +106,7 @@ const CattleDetails = () => {
             <TableHead>Weight (kg)</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Health Status</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -86,6 +128,99 @@ const CattleDetails = () => {
                 >
                   {cow.health_status}
                 </span>
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-2">
+                  {/* View Details Button */}
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setSelectedCattle(cow)}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Cattle Details - Tag #{cow.tag_number}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="font-semibold">Temperature</p>
+                            <p>{cow.temperature}°C</p>
+                          </div>
+                          <div>
+                            <p className="font-semibold">Weight</p>
+                            <p>{cow.weight} kg</p>
+                          </div>
+                          <div>
+                            <p className="font-semibold">Location</p>
+                            <p>{cow.location}</p>
+                          </div>
+                          <div>
+                            <p className="font-semibold">Health Status</p>
+                            <p>{cow.health_status}</p>
+                          </div>
+                          <div>
+                            <p className="font-semibold">Created At</p>
+                            <p>{new Date(cow.created_at!).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <p className="font-semibold">Last Updated</p>
+                            <p>{new Date(cow.updated_at!).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Delete Button */}
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(cow.id)}
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </Button>
+
+                  {/* Administer Medicine Button - only for sick/critical cattle */}
+                  {(cow.health_status === 'Under Treatment' || cow.health_status === 'Critical') && (
+                    <Dialog open={isAdministeringMedicine} onOpenChange={setIsAdministeringMedicine}>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Syringe className="w-4 h-4 text-yellow-500" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Administer Medicine</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-4">
+                          <p>Administer medicine to cattle with tag #{cow.tag_number}?</p>
+                          <div className="flex justify-end space-x-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsAdministeringMedicine(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={() => handleAdministerMedicine(cow)}
+                            >
+                              Confirm
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}
