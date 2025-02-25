@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -62,6 +61,34 @@ const CattleDetails = () => {
     }
   };
 
+  const reorderTagNumbers = async (cattle: Cattle[]) => {
+    // Sort cattle by current tag numbers
+    const sortedCattle = [...cattle].sort((a, b) => 
+      a.tag_number.localeCompare(b.tag_number, undefined, { numeric: true }));
+    
+    // Update tag numbers to maintain sequence
+    const updates = sortedCattle.map((cow, index) => ({
+      id: cow.id,
+      tag_number: `TAG${String(index + 1).padStart(3, '0')}`
+    }));
+
+    // Update all cattle records with new tag numbers
+    for (const update of updates) {
+      const { error } = await supabase
+        .from('cattle')
+        .update({ tag_number: update.tag_number })
+        .eq('id', update.id);
+      
+      if (error) {
+        toast.error(`Failed to update tag number for ${update.tag_number}`);
+        return;
+      }
+    }
+    
+    // Refresh the cattle list
+    fetchCattle();
+  };
+
   const handleDelete = async (id: string) => {
     const { error } = await supabase
       .from('cattle')
@@ -72,7 +99,8 @@ const CattleDetails = () => {
       toast.error('Failed to delete record');
     } else {
       toast.success('Record deleted successfully');
-      fetchCattle(); // Refresh the list
+      // After successful deletion, reorder tag numbers
+      await reorderTagNumbers(cattle.filter(c => c.id !== id));
     }
   };
 

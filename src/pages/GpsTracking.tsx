@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { 
   MapPin, 
@@ -17,7 +17,8 @@ import {
   Moon,
   RefreshCw,
   Satellite,
-  Copyright
+  Copyright,
+  Eye
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -27,6 +28,11 @@ interface CattleLocation {
   batteryLevel: number;
   signalStrength: number;
   lastUpdate: string;
+  cattle: Array<{
+    tag_number: string;
+    temperature: number;
+    health_status: string;
+  }>;
 }
 
 const GpsTracking = () => {
@@ -38,10 +44,10 @@ const GpsTracking = () => {
   const fetchLocations = async () => {
     setIsRefreshing(true);
     try {
-      // First, fetch all cattle to get accurate location counts
       const { data: cattleData, error: cattleError } = await supabase
         .from('cattle')
-        .select('location');
+        .select('tag_number, location, temperature, health_status')
+        .order('tag_number', { ascending: true });
 
       if (cattleError) throw cattleError;
 
@@ -51,19 +57,18 @@ const GpsTracking = () => {
         Resting: 0
       };
 
-      // Count cattle in each location from the cattle table
+      const cattleByLocation: { [key: string]: Array<any> } = {
+        Feeding: [],
+        Water: [],
+        Resting: []
+      };
+
       cattleData.forEach(cattle => {
         if (cattle.location && locationCounts.hasOwnProperty(cattle.location)) {
           locationCounts[cattle.location]++;
+          cattleByLocation[cattle.location].push(cattle);
         }
       });
-
-      // Fetch GPS tracking data for battery and signal information
-      const { data: gpsData, error: gpsError } = await supabase
-        .from('gps_tracking')
-        .select('location, battery_level, signal_strength');
-
-      if (gpsError) throw gpsError;
 
       const batteryLevels: { [key: string]: number[] } = {
         Feeding: [],
@@ -77,7 +82,7 @@ const GpsTracking = () => {
         Resting: []
       };
 
-      gpsData.forEach(item => {
+      cattleData.forEach(item => {
         if (item.location && batteryLevels.hasOwnProperty(item.location)) {
           if (item.battery_level) batteryLevels[item.location].push(item.battery_level);
           if (item.signal_strength) signalStrengths[item.location].push(item.signal_strength);
@@ -87,6 +92,7 @@ const GpsTracking = () => {
       const newLocations: CattleLocation[] = Object.keys(locationCounts).map(area => ({
         area: area as 'Feeding' | 'Water' | 'Resting',
         count: locationCounts[area],
+        cattle: cattleByLocation[area],
         batteryLevel: batteryLevels[area].length 
           ? batteryLevels[area].reduce((a, b) => a + b, 0) / batteryLevels[area].length 
           : 100,
@@ -98,7 +104,6 @@ const GpsTracking = () => {
 
       setLocations(newLocations);
 
-      // Check for alerts
       newLocations.forEach(loc => {
         if (loc.batteryLevel < 20) {
           setAlerts(prev => [...prev, `Low battery alert in ${loc.area} area`]);
@@ -191,7 +196,41 @@ const GpsTracking = () => {
                   {getAreaIcon(location.area)}
                   <CardTitle>{location.area} Area</CardTitle>
                 </div>
-                <Navigation className="w-5 h-5 text-muted-foreground animate-pulse" />
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>{location.area} Area - Cattle Details</DialogTitle>
+                    </DialogHeader>
+                    <ScrollArea className="h-[400px] mt-4">
+                      <div className="space-y-4">
+                        {location.cattle.map((cow) => (
+                          <div key={cow.tag_number} className="p-4 border rounded-lg">
+                            <div className="flex justify-between items-center">
+                              <h3 className="font-medium">Tag #{cow.tag_number}</h3>
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                cow.health_status === 'Healthy' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : cow.health_status === 'Critical'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {cow.health_status}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Temperature: {cow.temperature}°C
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
