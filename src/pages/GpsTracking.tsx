@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +47,16 @@ const GpsTracking = () => {
     try {
       const { data: cattleData, error: cattleError } = await supabase
         .from('cattle')
-        .select('tag_number, location, temperature, health_status')
+        .select(`
+          tag_number,
+          location,
+          temperature,
+          health_status,
+          gps_tracking (
+            battery_level,
+            signal_strength
+          )
+        `)
         .order('tag_number', { ascending: true });
 
       if (cattleError) throw cattleError;
@@ -63,13 +73,6 @@ const GpsTracking = () => {
         Resting: []
       };
 
-      cattleData.forEach(cattle => {
-        if (cattle.location && locationCounts.hasOwnProperty(cattle.location)) {
-          locationCounts[cattle.location]++;
-          cattleByLocation[cattle.location].push(cattle);
-        }
-      });
-
       const batteryLevels: { [key: string]: number[] } = {
         Feeding: [],
         Water: [],
@@ -82,11 +85,34 @@ const GpsTracking = () => {
         Resting: []
       };
 
-      cattleData.forEach(item => {
-        if (item.location && batteryLevels.hasOwnProperty(item.location)) {
-          if (item.battery_level) batteryLevels[item.location].push(item.battery_level);
-          if (item.signal_strength) signalStrengths[item.location].push(item.signal_strength);
+      // Process the joined data and ensure uniform tag numbers
+      cattleData?.forEach(cattle => {
+        if (cattle.location && locationCounts.hasOwnProperty(cattle.location)) {
+          locationCounts[cattle.location]++;
+          cattleByLocation[cattle.location].push({
+            ...cattle,
+            tag_number: cattle.tag_number.padStart(6, '0') // Ensure uniform tag number format
+          });
+          
+          const gpsData = Array.isArray(cattle.gps_tracking) ? 
+            cattle.gps_tracking[0] : cattle.gps_tracking;
+
+          if (gpsData) {
+            if (gpsData.battery_level) {
+              batteryLevels[cattle.location].push(gpsData.battery_level);
+            }
+            if (gpsData.signal_strength) {
+              signalStrengths[cattle.location].push(gpsData.signal_strength);
+            }
+          }
         }
+      });
+
+      // Sort cattle within each location by tag number
+      Object.keys(cattleByLocation).forEach(location => {
+        cattleByLocation[location].sort((a, b) => 
+          a.tag_number.localeCompare(b.tag_number, undefined, { numeric: true })
+        );
       });
 
       const newLocations: CattleLocation[] = Object.keys(locationCounts).map(area => ({
@@ -104,6 +130,7 @@ const GpsTracking = () => {
 
       setLocations(newLocations);
 
+      setAlerts([]);
       newLocations.forEach(loc => {
         if (loc.batteryLevel < 20) {
           setAlerts(prev => [...prev, `Low battery alert in ${loc.area} area`]);
@@ -112,6 +139,7 @@ const GpsTracking = () => {
           setAlerts(prev => [...prev, `Poor signal strength in ${loc.area} area`]);
         }
       });
+
     } catch (error: any) {
       toast.error('Failed to fetch GPS data: ' + error.message);
     } finally {
@@ -159,7 +187,7 @@ const GpsTracking = () => {
     <div className="animate-fade-in space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">GPS & RFID Monitoring</h1>
+          <h1 className="text-3xl font-bold">Smart Cattle Monitoring</h1>
           <p className="text-muted-foreground mt-1">
             Real-time sensor monitoring and tracking
           </p>
@@ -200,6 +228,7 @@ const GpsTracking = () => {
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm">
                       <Eye className="w-4 h-4" />
+                      View Cattle
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl">
@@ -227,6 +256,11 @@ const GpsTracking = () => {
                             </p>
                           </div>
                         ))}
+                        {location.cattle.length === 0 && (
+                          <p className="text-center text-muted-foreground">
+                            No cattle in this area
+                          </p>
+                        )}
                       </div>
                     </ScrollArea>
                   </DialogContent>
@@ -264,14 +298,6 @@ const GpsTracking = () => {
                     {Math.round(location.signalStrength)}%
                   </span>
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Thermometer className="w-4 h-4" />
-                    <span>Temperature</span>
-                  </div>
-                  <span className="font-medium">38.5°C</span>
-                </div>
               </div>
 
               <p className="text-sm text-muted-foreground">
@@ -303,28 +329,10 @@ const GpsTracking = () => {
         </Card>
       )}
 
-      <div className="aspect-video overflow-hidden rounded-lg border bg-muted relative">
-        <img 
-          src="/cattle-grazing.jpg" 
-          alt="Grazing Cattle"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-white">Live Sensor Data</h2>
-            <p className="text-white/90">
-              Connected sensors: {locations.length} areas | 
-              Total cattle monitored: {locations.reduce((acc, loc) => acc + loc.count, 0)}
-            </p>
-          </div>
-        </div>
-      </div>
-
       <footer className="text-center pt-8 border-t">
         <div className="flex items-center justify-center space-x-2 text-muted-foreground">
           <Copyright className="w-4 h-4" />
-          <p>{new Date().getFullYear()} Cattle Management System. All rights reserved.</p>
+          <p>{new Date().getFullYear()} Smart Cattle Monitoring. All rights reserved.</p>
         </div>
       </footer>
     </div>
