@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 
 interface Cattle {
@@ -44,7 +45,7 @@ const CattleDetails = () => {
     const { data, error } = await supabase
       .from('cattle')
       .select('*')
-      .order('tag_number', { ascending: true }); // Sort by tag number
+      .order('tag_number', { ascending: true });
 
     if (data) {
       const formattedData: Cattle[] = data.map(record => ({
@@ -61,51 +62,23 @@ const CattleDetails = () => {
     }
   };
 
-  const reorderTagNumbers = async (cattle: Cattle[]) => {
-    // Sort cattle by current tag numbers
-    const sortedCattle = [...cattle].sort((a, b) => 
-      a.tag_number.localeCompare(b.tag_number, undefined, { numeric: true }));
-    
-    // Update tag numbers to maintain sequence
-    const updates = sortedCattle.map((cow, index) => ({
-      id: cow.id,
-      tag_number: `TAG${String(index + 1).padStart(3, '0')}`
-    }));
-
-    // Update all cattle records with new tag numbers
-    for (const update of updates) {
+  const handleDelete = async (id: string) => {
+    try {
       const { error } = await supabase
         .from('cattle')
-        .update({ tag_number: update.tag_number })
-        .eq('id', update.id);
-      
-      if (error) {
-        toast.error(`Failed to update tag number for ${update.tag_number}`);
-        return;
-      }
-    }
-    
-    // Refresh the cattle list
-    fetchCattle();
-  };
+        .delete()
+        .eq('id', id);
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase
-      .from('cattle')
-      .delete()
-      .eq('id', id);
+      if (error) throw error;
 
-    if (error) {
-      toast.error('Failed to delete record');
-    } else {
+      setCattle(prevCattle => prevCattle.filter(cow => cow.id !== id));
       toast.success('Record deleted successfully');
-      // After successful deletion, reorder tag numbers
-      await reorderTagNumbers(cattle.filter(c => c.id !== id));
+    } catch (error: any) {
+      toast.error('Failed to delete record: ' + error.message);
     }
   };
 
   const handleAdministerMedicine = async (cattle: Cattle) => {
-    // In a real application, this would update inventory and cattle health records
     const { error } = await supabase
       .from('cattle')
       .update({ health_status: 'Under Treatment' })
@@ -115,7 +88,7 @@ const CattleDetails = () => {
       toast.error('Failed to update treatment status');
     } else {
       toast.success('Medicine administered successfully');
-      fetchCattle(); // Refresh the list
+      fetchCattle();
     }
     setIsAdministeringMedicine(false);
   };
@@ -129,6 +102,7 @@ const CattleDetails = () => {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-20">No.</TableHead>
             <TableHead>Tag Number</TableHead>
             <TableHead>Temperature (°C)</TableHead>
             <TableHead>Weight (kg)</TableHead>
@@ -138,8 +112,9 @@ const CattleDetails = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((cow) => (
+          {data.map((cow, index) => (
             <TableRow key={cow.id}>
+              <TableCell>{index + 1}</TableCell>
               <TableCell>{cow.tag_number}</TableCell>
               <TableCell>{cow.temperature}</TableCell>
               <TableCell>{cow.weight}</TableCell>
@@ -159,7 +134,6 @@ const CattleDetails = () => {
               </TableCell>
               <TableCell>
                 <div className="flex gap-2">
-                  {/* View Details Button */}
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button 
@@ -205,7 +179,6 @@ const CattleDetails = () => {
                     </DialogContent>
                   </Dialog>
 
-                  {/* Delete Button */}
                   <Button 
                     variant="outline"
                     size="sm"
@@ -214,7 +187,6 @@ const CattleDetails = () => {
                     <Trash2 className="w-4 h-4 text-red-500" />
                   </Button>
 
-                  {/* Administer Medicine Button - only for sick/critical cattle */}
                   {(cow.health_status === 'Under Treatment' || cow.health_status === 'Critical') && (
                     <Dialog open={isAdministeringMedicine} onOpenChange={setIsAdministeringMedicine}>
                       <DialogTrigger asChild>
