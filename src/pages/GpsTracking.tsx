@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +18,9 @@ import {
   RefreshCw,
   Satellite,
   Copyright,
-  Eye
+  Eye,
+  Activity,
+  Progress
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -85,13 +86,12 @@ const GpsTracking = () => {
         Resting: []
       };
 
-      // Process the joined data and ensure uniform tag numbers
       cattleData?.forEach(cattle => {
         if (cattle.location && locationCounts.hasOwnProperty(cattle.location)) {
           locationCounts[cattle.location]++;
           cattleByLocation[cattle.location].push({
             ...cattle,
-            tag_number: cattle.tag_number.padStart(6, '0') // Ensure uniform tag number format
+            tag_number: cattle.tag_number.padStart(6, '0')
           });
           
           const gpsData = Array.isArray(cattle.gps_tracking) ? 
@@ -108,7 +108,6 @@ const GpsTracking = () => {
         }
       });
 
-      // Sort cattle within each location by tag number
       Object.keys(cattleByLocation).forEach(location => {
         cattleByLocation[location].sort((a, b) => 
           a.tag_number.localeCompare(b.tag_number, undefined, { numeric: true })
@@ -188,9 +187,7 @@ const GpsTracking = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Smart Cattle Monitoring</h1>
-          <p className="text-muted-foreground mt-1">
-            Real-time sensor monitoring and tracking
-          </p>
+          <p className="text-muted-foreground mt-1">GPS and Sensor Data</p>
         </div>
         <div className="flex gap-4">
           <Button
@@ -307,6 +304,112 @@ const GpsTracking = () => {
           </Card>
         ))}
       </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="w-5 h-5" />
+            Sensor Monitoring Dashboard
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-br from-blue-50 to-blue-100">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Satellite className="w-4 h-4 text-blue-600" />
+                GPS Location
+              </h3>
+              <div className="text-sm space-y-1">
+                <p>Latitude: <span className="font-mono">--.-°N</span></p>
+                <p>Longitude: <span className="font-mono">--.-°E</span></p>
+                <Progress value={0} className="mt-2" />
+                <p className="text-xs text-muted-foreground">Awaiting GPS signal...</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-br from-green-50 to-green-100">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Thermometer className="w-4 h-4 text-green-600" />
+                DHT11 Sensor
+              </h3>
+              <div className="text-sm space-y-1">
+                <p>Temperature: <span className="font-mono">--°C</span></p>
+                <p>Humidity: <span className="font-mono">--%</span></p>
+                <Progress value={0} className="mt-2" />
+                <p className="text-xs text-muted-foreground">Initializing sensor...</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-br from-purple-50 to-purple-100">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Navigation className="w-4 h-4 text-purple-600" />
+                MPU6050 Accelerometer
+              </h3>
+              <div className="text-sm space-y-1">
+                <p>X-Axis: <span className="font-mono">0.00g</span></p>
+                <p>Y-Axis: <span className="font-mono">0.00g</span></p>
+                <p>Z-Axis: <span className="font-mono">0.00g</span></p>
+                <Progress value={0} className="mt-2" />
+                <p className="text-xs text-muted-foreground">Calibrating...</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-br from-orange-50 to-orange-100">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Activity className="w-4 h-4 text-orange-600" />
+                ESP32 Status
+              </h3>
+              <div className="text-sm space-y-1">
+                <p>Status: <span className="text-yellow-500">Initializing</span></p>
+                <p>Last Update: <span className="font-mono">--:--:--</span></p>
+                <Progress value={0} className="mt-2" />
+                <p className="text-xs text-muted-foreground">Connecting...</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Cattle Activity Monitor</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Activity Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Progress value={0} className="w-full" />
+                    <p className="text-xs text-muted-foreground">Waiting for sensor data...</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">System Health</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>ESP32:</span>
+                      <span className="text-yellow-500">Initializing</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Sensors:</span>
+                      <span className="text-yellow-500">Connecting</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {alerts.length > 0 && (
         <Card className="border-yellow-500">
