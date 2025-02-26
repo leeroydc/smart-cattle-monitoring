@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { 
   MapPin, 
@@ -19,13 +18,7 @@ import {
   RefreshCw,
   Satellite,
   Copyright,
-  Eye,
-  Activity,
-  AlertOctagon,
-  HeartPulse,
-  Scale,
-  Timer,
-  Movement
+  Eye
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -151,47 +144,18 @@ const GpsTracking = () => {
     }
   };
 
-  const handleHealthReview = async (cattleId: string) => {
-    try {
-      const { data: cattleData, error } = await supabase
-        .from('cattle')
-        .update({ health_status: 'Under Treatment' })
-        .eq('id', cattleId)
-        .select()
-        .single();
+  useEffect(() => {
+    fetchLocations();
+    let interval: NodeJS.Timeout;
 
-      if (error) throw error;
-      
-      toast.success('Cattle marked for health review');
-      fetchLocations(); // Refresh the data
-    } catch (error: any) {
-      toast.error('Failed to update health status: ' + error.message);
-    }
-  };
-
-  const getAbnormalityDetails = (cow: any) => {
-    const abnormalities = [];
-    
-    if (cow.temperature > 39.5) {
-      abnormalities.push({
-        type: 'High Temperature',
-        value: `${cow.temperature}°C`,
-        severity: 'Critical',
-        icon: <Thermometer className="w-4 h-4 text-red-500" />
-      });
-    }
-    
-    if (cow.temperature < 37.5) {
-      abnormalities.push({
-        type: 'Low Temperature',
-        value: `${cow.temperature}°C`,
-        severity: 'Warning',
-        icon: <Thermometer className="w-4 h-4 text-yellow-500" />
-      });
+    if (autoRefresh) {
+      interval = setInterval(fetchLocations, 30000);
     }
 
-    return abnormalities;
-  };
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [autoRefresh]);
 
   const getAreaIcon = (area: string) => {
     switch (area) {
@@ -215,19 +179,6 @@ const GpsTracking = () => {
     setAutoRefresh(!autoRefresh);
     toast.info(autoRefresh ? 'Auto-refresh disabled' : 'Auto-refresh enabled');
   };
-
-  useEffect(() => {
-    fetchLocations();
-    let interval: NodeJS.Timeout;
-
-    if (autoRefresh) {
-      interval = setInterval(fetchLocations, 30000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [autoRefresh]);
 
   return (
     <div className="animate-fade-in space-y-6 p-6">
@@ -297,54 +248,16 @@ const GpsTracking = () => {
                                 {cow.health_status}
                               </span>
                             </div>
-                            
-                            <div className="mt-3 space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="flex items-center gap-1">
-                                  <Thermometer className="w-4 h-4" />
-                                  Temperature
-                                </span>
-                                <span>{cow.temperature}°C</span>
-                              </div>
-                            </div>
-
-                            {cow.health_status !== 'Healthy' && getAbnormalityDetails(cow).length > 0 && (
-                              <div className="mt-3 space-y-2 bg-red-50 p-3 rounded-lg">
-                                <h4 className="text-sm font-semibold text-red-700 flex items-center gap-1">
-                                  <AlertOctagon className="w-4 h-4" />
-                                  Abnormal Behaviors Detected
-                                </h4>
-                                {getAbnormalityDetails(cow).map((abnormality, index) => (
-                                  <div key={index} className="flex items-center justify-between text-sm">
-                                    <span className="flex items-center gap-1">
-                                      {abnormality.icon}
-                                      {abnormality.type}
-                                    </span>
-                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold
-                                      ${abnormality.severity === 'Critical' 
-                                        ? 'bg-red-100 text-red-800' 
-                                        : 'bg-yellow-100 text-yellow-800'}`
-                                    }>
-                                      {abnormality.value}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            {cow.health_status === 'Healthy' && (
-                              <Button 
-                                variant="outline"
-                                size="sm"
-                                className="mt-3 w-full"
-                                onClick={() => handleHealthReview(cow.id)}
-                              >
-                                <HeartPulse className="w-4 h-4 mr-1" />
-                                Request Health Review
-                              </Button>
-                            )}
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Temperature: {cow.temperature}°C
+                            </p>
                           </div>
                         ))}
+                        {location.cattle.length === 0 && (
+                          <p className="text-center text-muted-foreground">
+                            No cattle in this area
+                          </p>
+                        )}
                       </div>
                     </ScrollArea>
                   </DialogContent>
@@ -415,99 +328,39 @@ const GpsTracking = () => {
 
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="w-5 h-5" />
-            GPS and Sensor Monitor
-          </CardTitle>
+          <CardTitle>GPS and Sensor Monitor</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-br from-blue-50 to-blue-100">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Satellite className="w-4 h-4 text-blue-600" />
-                GPS Location
-              </h3>
+            <div className="space-y-2 p-4 border rounded-lg">
+              <h3 className="font-semibold">GPS Location</h3>
               <div className="text-sm space-y-1">
-                <p>Latitude: <span className="font-mono animate-pulse">12.3456°N</span></p>
-                <p>Longitude: <span className="font-mono animate-pulse">78.9012°E</span></p>
-                <Progress value={65} className="mt-2" />
-                <p className="text-xs text-muted-foreground">Signal Strength: 65%</p>
+                <p>Latitude: <span className="font-mono">Awaiting data...</span></p>
+                <p>Longitude: <span className="font-mono">Awaiting data...</span></p>
               </div>
             </div>
-            
-            <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-br from-green-50 to-green-100">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Thermometer className="w-4 h-4 text-green-600" />
-                Environmental Data
-              </h3>
+            <div className="space-y-2 p-4 border rounded-lg">
+              <h3 className="font-semibold">Temperature & Humidity</h3>
               <div className="text-sm space-y-1">
-                <p>Temperature: <span className="font-mono animate-pulse">28.5°C</span></p>
-                <p>Humidity: <span className="font-mono animate-pulse">65%</span></p>
-                <Progress value={85} className="mt-2" />
-                <p className="text-xs text-muted-foreground">DHT11 Status: 85%</p>
+                <p>Temperature: <span className="font-mono">Awaiting DHT11...</span></p>
+                <p>Humidity: <span className="font-mono">Awaiting DHT11...</span></p>
               </div>
             </div>
-            
-            <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-br from-purple-50 to-purple-100">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Movement className="w-4 h-4 text-purple-600" />
-                Motion Analysis
-              </h3>
+            <div className="space-y-2 p-4 border rounded-lg">
+              <h3 className="font-semibold">Motion Data</h3>
               <div className="text-sm space-y-1">
-                <p>X-Axis: <span className="font-mono animate-pulse">0.23g</span></p>
-                <p>Y-Axis: <span className="font-mono animate-pulse">0.15g</span></p>
-                <p>Z-Axis: <span className="font-mono animate-pulse">1.02g</span></p>
-                <Progress value={95} className="mt-2" />
-                <p className="text-xs text-muted-foreground">MPU6050 Status: 95%</p>
+                <p>X-Axis: <span className="font-mono">Awaiting MPU6050...</span></p>
+                <p>Y-Axis: <span className="font-mono">Awaiting MPU6050...</span></p>
+                <p>Z-Axis: <span className="font-mono">Awaiting MPU6050...</span></p>
               </div>
             </div>
-            
-            <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-br from-orange-50 to-orange-100">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Timer className="w-4 h-4 text-orange-600" />
-                System Status
-              </h3>
+            <div className="space-y-2 p-4 border rounded-lg">
+              <h3 className="font-semibold">Device Status</h3>
               <div className="text-sm space-y-1">
-                <p>ESP32: <span className="text-green-500 animate-pulse">Active</span></p>
-                <p>Last Update: <span className="font-mono">12:45:32</span></p>
-                <Progress value={90} className="mt-2" />
-                <p className="text-xs text-muted-foreground">System Health: 90%</p>
+                <p>ESP32: <span className="text-green-500">Ready</span></p>
+                <p>Last Update: <span className="font-mono">--:--:--</span></p>
               </div>
             </div>
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="bg-gradient-to-r from-blue-50 via-blue-100 to-blue-50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Real-time Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Activity className="w-4 h-4 text-blue-600 animate-pulse" />
-                    <span>Monitoring 24 active sensors</span>
-                  </div>
-                  <Progress value={75} className="mt-2" />
-                  <p className="text-xs text-muted-foreground">Network Status: Good</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-r from-green-50 via-green-100 to-green-50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">System Health</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <HeartPulse className="w-4 h-4 text-green-600 animate-pulse" />
-                    <span>All systems operational</span>
-                  </div>
-                  <Progress value={95} className="mt-2" />
-                  <p className="text-xs text-muted-foreground">Last Check: 2 minutes ago</p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </CardContent>
       </Card>
