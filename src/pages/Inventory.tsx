@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,6 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Droplet, Pill, Leaf } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -59,15 +58,7 @@ const inventory = [
   },
 ];
 
-interface Cattle {
-  id: string;
-  tag_number: string;
-  health_status: string;
-}
-
 const Inventory = () => {
-  const [sickCattleList, setSickCattleList] = useState<Cattle[]>([]);
-
   const handleDistribute = async (item: typeof inventory[0]) => {
     try {
       let targetLocation = '';
@@ -79,24 +70,11 @@ const Inventory = () => {
           targetLocation = 'Feeding';
           break;
         case 'medicine':
-          const { data: sickCattle, error: queryError } = await supabase
-            .from('cattle')
-            .select('*')
-            .in('health_status', ['Under Treatment', 'Critical'])
-            .order('tag_number', { ascending: true });
-
-          if (queryError) throw queryError;
-
-          if (!sickCattle || sickCattle.length === 0) {
-            toast.info('No cattle currently need medical attention');
-            return;
-          }
-
-          setSickCattleList(sickCattle);
-          toast.success(`Found ${sickCattle.length} cattle needing medical attention`);
+          // Medicine can be distributed anywhere
           return;
       }
 
+      // If it's medicine, we don't update locations
       if (item.type !== 'medicine') {
         const { data: cattleInArea, error: queryError } = await supabase
           .from('cattle')
@@ -111,6 +89,7 @@ const Inventory = () => {
         }
       }
 
+      // Show success message based on type
       switch (item.type) {
         case 'water':
           toast.success(`Water distributed to Water area`);
@@ -118,33 +97,12 @@ const Inventory = () => {
         case 'feed':
           toast.success(`${item.name} distributed to Feeding area`);
           break;
+        case 'medicine':
+          toast.success(`Medical supplies ready for distribution`);
+          break;
       }
     } catch (error: any) {
       toast.error('Failed to distribute: ' + error.message);
-    }
-  };
-
-  const handleTreatCattle = async (cattleId: string) => {
-    try {
-      const { error } = await supabase
-        .from('cattle')
-        .update({ health_status: 'Under Treatment' })
-        .eq('id', cattleId);
-
-      if (error) throw error;
-      
-      // Update the local state to reflect the change
-      setSickCattleList(prevList => 
-        prevList.map(cattle => 
-          cattle.id === cattleId 
-            ? { ...cattle, health_status: 'Under Treatment' }
-            : cattle
-        )
-      );
-      
-      toast.success('Treatment administered successfully');
-    } catch (error: any) {
-      toast.error('Failed to administer treatment: ' + error.message);
     }
   };
 
@@ -190,7 +148,7 @@ const Inventory = () => {
                 <p className="text-xs text-muted-foreground">
                   {item.progress}% remaining
                 </p>
-                <Dialog onOpenChange={() => item.type === 'medicine' && handleDistribute(item)}>
+                <Dialog>
                   <DialogTrigger asChild>
                     <Button 
                       className="w-full mt-4"
@@ -200,60 +158,28 @@ const Inventory = () => {
                       <span className="ml-2">Distribute {item.name}</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Distribute {item.name}</DialogTitle>
                     </DialogHeader>
                     <div className="py-4">
-                      {item.type === 'medicine' ? (
-                        <div className="space-y-4">
-                          <p className="text-sm text-muted-foreground">
-                            List of cattle requiring medical attention:
-                          </p>
-                          <ScrollArea className="h-[300px]">
-                            <div className="space-y-2">
-                              {sickCattleList.map((cattle) => (
-                                <div key={cattle.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                  <div>
-                                    <p className="font-medium">Tag #{cattle.tag_number}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      Status: {cattle.health_status}
-                                    </p>
-                                  </div>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleTreatCattle(cattle.id)}
-                                  >
-                                    Administer Treatment
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </div>
-                      ) : (
-                        <>
-                          <p className="text-sm text-muted-foreground">
-                            {item.type === 'water' && "Water will be distributed to the Water area"}
-                            {item.type === 'feed' && "Feed will be distributed to the Feeding area"}
-                          </p>
-                          <p className="mt-2 text-sm">
-                            Available: {item.quantity} {item.unit}
-                          </p>
-                        </>
-                      )}
+                      <p className="text-sm text-muted-foreground">
+                        {item.type === 'water' && "Water will be distributed to the Water area"}
+                        {item.type === 'feed' && "Feed will be distributed to the Feeding area"}
+                        {item.type === 'medicine' && "Medical supplies can be administered to any cattle"}
+                      </p>
+                      <p className="mt-2 text-sm">
+                        Available: {item.quantity} {item.unit}
+                      </p>
                     </div>
-                    {item.type !== 'medicine' && (
-                      <DialogFooter>
-                        <Button
-                          variant="outline"
-                          onClick={() => handleDistribute(item)}
-                        >
-                          Confirm Distribution
-                        </Button>
-                      </DialogFooter>
-                    )}
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleDistribute(item)}
+                      >
+                        Confirm Distribution
+                      </Button>
+                    </DialogFooter>
                   </DialogContent>
                 </Dialog>
               </div>
