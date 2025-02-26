@@ -102,8 +102,7 @@ const CattleDetails = () => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-20">No.</TableHead>
-            <TableHead>Tag Number</TableHead>
+            <TableHead>No.</TableHead>
             <TableHead>Temperature (°C)</TableHead>
             <TableHead>Weight (kg)</TableHead>
             <TableHead>Location</TableHead>
@@ -115,7 +114,6 @@ const CattleDetails = () => {
           {data.map((cow, index) => (
             <TableRow key={cow.id}>
               <TableCell>{index + 1}</TableCell>
-              <TableCell>{cow.tag_number}</TableCell>
               <TableCell>{cow.temperature}</TableCell>
               <TableCell>{cow.weight}</TableCell>
               <TableCell>{cow.location}</TableCell>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,13 +84,12 @@ const GpsTracking = () => {
         Resting: []
       };
 
-      // Process the joined data and ensure uniform tag numbers
       cattleData?.forEach(cattle => {
         if (cattle.location && locationCounts.hasOwnProperty(cattle.location)) {
           locationCounts[cattle.location]++;
           cattleByLocation[cattle.location].push({
             ...cattle,
-            tag_number: cattle.tag_number.padStart(6, '0') // Ensure uniform tag number format
+            tag_number: cattle.tag_number.padStart(6, '0')
           });
           
           const gpsData = Array.isArray(cattle.gps_tracking) ? 
@@ -108,7 +106,6 @@ const GpsTracking = () => {
         }
       });
 
-      // Sort cattle within each location by tag number
       Object.keys(cattleByLocation).forEach(location => {
         cattleByLocation[location].sort((a, b) => 
           a.tag_number.localeCompare(b.tag_number, undefined, { numeric: true })
@@ -328,6 +325,45 @@ const GpsTracking = () => {
           </CardContent>
         </Card>
       )}
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>GPS and Sensor Monitor</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-2 p-4 border rounded-lg">
+              <h3 className="font-semibold">GPS Location</h3>
+              <div className="text-sm space-y-1">
+                <p>Latitude: <span className="font-mono">Awaiting data...</span></p>
+                <p>Longitude: <span className="font-mono">Awaiting data...</span></p>
+              </div>
+            </div>
+            <div className="space-y-2 p-4 border rounded-lg">
+              <h3 className="font-semibold">Temperature & Humidity</h3>
+              <div className="text-sm space-y-1">
+                <p>Temperature: <span className="font-mono">Awaiting DHT11...</span></p>
+                <p>Humidity: <span className="font-mono">Awaiting DHT11...</span></p>
+              </div>
+            </div>
+            <div className="space-y-2 p-4 border rounded-lg">
+              <h3 className="font-semibold">Motion Data</h3>
+              <div className="text-sm space-y-1">
+                <p>X-Axis: <span className="font-mono">Awaiting MPU6050...</span></p>
+                <p>Y-Axis: <span className="font-mono">Awaiting MPU6050...</span></p>
+                <p>Z-Axis: <span className="font-mono">Awaiting MPU6050...</span></p>
+              </div>
+            </div>
+            <div className="space-y-2 p-4 border rounded-lg">
+              <h3 className="font-semibold">Device Status</h3>
+              <div className="text-sm space-y-1">
+                <p>ESP32: <span className="text-green-500">Ready</span></p>
+                <p>Last Update: <span className="font-mono">--:--:--</span></p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <footer className="text-center pt-8 border-t">
         <div className="flex items-center justify-center space-x-2 text-muted-foreground">
