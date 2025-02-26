@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +26,7 @@ import {
   HeartPulse,
   Scale,
   Timer,
-  Movement
+  Move // Changed from Movement to Move
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -36,6 +37,7 @@ interface CattleLocation {
   signalStrength: number;
   lastUpdate: string;
   cattle: Array<{
+    id: string; // Added id to the interface
     tag_number: string;
     temperature: number;
     health_status: string;
@@ -54,6 +56,7 @@ const GpsTracking = () => {
       const { data: cattleData, error: cattleError } = await supabase
         .from('cattle')
         .select(`
+          id, // Explicitly selecting id
           tag_number,
           location,
           temperature,
@@ -450,7 +453,7 @@ const GpsTracking = () => {
             
             <div className="space-y-2 p-4 border rounded-lg bg-gradient-to-br from-purple-50 to-purple-100">
               <h3 className="font-semibold flex items-center gap-2">
-                <Movement className="w-4 h-4 text-purple-600" />
+                <Move className="w-4 h-4 text-purple-600" /> {/* Changed from Movement to Move */}
                 Motion Analysis
               </h3>
               <div className="text-sm space-y-1">
