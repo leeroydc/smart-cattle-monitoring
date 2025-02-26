@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Droplet, Pill, Leaf } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -57,7 +59,15 @@ const inventory = [
   },
 ];
 
+interface Cattle {
+  id: string;
+  tag_number: string;
+  health_status: string;
+}
+
 const Inventory = () => {
+  const [sickCattleList, setSickCattleList] = useState<Cattle[]>([]);
+
   const handleDistribute = async (item: typeof inventory[0]) => {
     try {
       let targetLocation = '';
@@ -82,8 +92,9 @@ const Inventory = () => {
             return;
           }
 
+          setSickCattleList(sickCattle);
           toast.success(`Found ${sickCattle.length} cattle needing medical attention`);
-          return sickCattle;
+          return;
       }
 
       if (item.type !== 'medicine') {
@@ -107,9 +118,6 @@ const Inventory = () => {
         case 'feed':
           toast.success(`${item.name} distributed to Feeding area`);
           break;
-        case 'medicine':
-          toast.success(`Medical supplies ready for distribution`);
-          break;
       }
     } catch (error: any) {
       toast.error('Failed to distribute: ' + error.message);
@@ -124,6 +132,16 @@ const Inventory = () => {
         .eq('id', cattleId);
 
       if (error) throw error;
+      
+      // Update the local state to reflect the change
+      setSickCattleList(prevList => 
+        prevList.map(cattle => 
+          cattle.id === cattleId 
+            ? { ...cattle, health_status: 'Under Treatment' }
+            : cattle
+        )
+      );
+      
       toast.success('Treatment administered successfully');
     } catch (error: any) {
       toast.error('Failed to administer treatment: ' + error.message);
@@ -172,7 +190,7 @@ const Inventory = () => {
                 <p className="text-xs text-muted-foreground">
                   {item.progress}% remaining
                 </p>
-                <Dialog>
+                <Dialog onOpenChange={() => item.type === 'medicine' && handleDistribute(item)}>
                   <DialogTrigger asChild>
                     <Button 
                       className="w-full mt-4"
@@ -194,26 +212,23 @@ const Inventory = () => {
                           </p>
                           <ScrollArea className="h-[300px]">
                             <div className="space-y-2">
-                              {async () => {
-                                const sickCattle = await handleDistribute(item);
-                                return sickCattle?.map((cattle: any) => (
-                                  <div key={cattle.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                    <div>
-                                      <p className="font-medium">Tag #{cattle.tag_number}</p>
-                                      <p className="text-sm text-muted-foreground">
-                                        Status: {cattle.health_status}
-                                      </p>
-                                    </div>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleTreatCattle(cattle.id)}
-                                    >
-                                      Administer Treatment
-                                    </Button>
+                              {sickCattleList.map((cattle) => (
+                                <div key={cattle.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                  <div>
+                                    <p className="font-medium">Tag #{cattle.tag_number}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      Status: {cattle.health_status}
+                                    </p>
                                   </div>
-                                ));
-                              }}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleTreatCattle(cattle.id)}
+                                  >
+                                    Administer Treatment
+                                  </Button>
+                                </div>
+                              ))}
                             </div>
                           </ScrollArea>
                         </div>
