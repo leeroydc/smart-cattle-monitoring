@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { 
   MapPin, 
@@ -19,8 +20,7 @@ import {
   Satellite,
   Copyright,
   Eye,
-  Activity,
-  Progress
+  Activity
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
