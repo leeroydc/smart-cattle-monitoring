@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,7 +21,6 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
 
 interface Cattle {
   id: string;
@@ -64,10 +62,9 @@ const CattleDetails = () => {
             // Add to notifications if not already there
             setUnhealthyNotifications(prev => {
               if (!prev.some(c => c.id === updatedCattle.id)) {
-                toast({
-                  title: "Cattle health alert",
-                  description: `Cattle #${updatedCattle.tag_number} needs medical attention!`,
-                  variant: "destructive"
+                toast(`Cattle #${updatedCattle.tag_number} needs medical attention!`, {
+                  description: `Health status: ${updatedCattle.health_status}`,
+                  className: "bg-red-100 border-red-400",
                 });
                 return [...prev, updatedCattle];
               }
@@ -111,10 +108,9 @@ const CattleDetails = () => {
         setUnhealthyNotifications(unhealthyCattle);
         // Only show toast notification on initial load if there are unhealthy cattle
         if (unhealthyCattle.length > 0) {
-          toast({
-            title: "Unhealthy cattle detected",
+          toast(`Unhealthy cattle detected`, {
             description: `${unhealthyCattle.length} cattle need medical attention`,
-            variant: "destructive"
+            className: "bg-red-100 border-red-400",
           });
         }
       }
