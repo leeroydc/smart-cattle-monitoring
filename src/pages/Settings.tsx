@@ -60,14 +60,18 @@ const Settings = () => {
   }, []);
 
   const fetchCattleList = async () => {
-    const { data, error } = await supabase
-      .from('cattle')
-      .select('*');
+    try {
+      const { data, error } = await supabase
+        .from('cattle')
+        .select('*');
 
-    if (data) {
-      setCattleList(data);
-    } else if (error) {
-      toast.error('Failed to fetch cattle list');
+      if (error) throw error;
+      
+      if (data) {
+        setCattleList(data);
+      }
+    } catch (error: any) {
+      toast.error('Failed to fetch cattle list: ' + error.message);
     }
   };
 
@@ -76,6 +80,19 @@ const Settings = () => {
     setIsLoading(true);
     
     try {
+      // Validate form data
+      if (!formData.tagNumber.trim()) {
+        throw new Error('Tag number is required');
+      }
+      
+      // Check for duplicate tag numbers
+      const isDuplicate = cattleList.some(cattle => 
+        cattle.tag_number.toLowerCase() === formData.tagNumber.toLowerCase());
+      
+      if (isDuplicate) {
+        throw new Error('A cattle with this tag number already exists');
+      }
+      
       const { data, error } = await supabase
         .from('cattle')
         .insert([{
@@ -182,6 +199,9 @@ const Settings = () => {
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle>Add New Cattle</DialogTitle>
+                  <DialogDescription>
+                    Fill in the details below to add a new cattle to your inventory.
+                  </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleAddCattle} className="space-y-4">
                   <div className="space-y-2">
