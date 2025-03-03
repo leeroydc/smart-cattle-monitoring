@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { 
   MapPin, 
@@ -20,9 +22,10 @@ import {
   Satellite,
   Copyright,
   Eye,
-  Activity
+  Activity,
+  List
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, Cattle } from '@/integrations/supabase/client';
 
 interface CattleLocation {
   area: 'Feeding' | 'Water' | 'Resting';
@@ -30,11 +33,7 @@ interface CattleLocation {
   batteryLevel: number;
   signalStrength: number;
   lastUpdate: string;
-  cattle: Array<{
-    tag_number: string;
-    temperature: number;
-    health_status: string;
-  }>;
+  cattle: Cattle[];
 }
 
 const GpsTracking = () => {
@@ -42,6 +41,8 @@ const GpsTracking = () => {
   const [alerts, setAlerts] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [showCattleList, setShowCattleList] = useState(false);
+  const [allCattle, setAllCattle] = useState<Cattle[]>([]);
 
   const fetchLocations = async () => {
     setIsRefreshing(true);
@@ -49,18 +50,28 @@ const GpsTracking = () => {
       const { data: cattleData, error: cattleError } = await supabase
         .from('cattle')
         .select(`
+          id,
           tag_number,
-          location,
           temperature,
+          weight,
           health_status,
+          location,
+          created_at,
+          updated_at,
           gps_tracking (
             battery_level,
-            signal_strength
+            signal_strength,
+            last_updated
           )
         `)
         .order('tag_number', { ascending: true });
 
-      if (cattleError) throw cattleError;
+      if (cattleError) {
+        throw cattleError;
+      }
+
+      // Save all cattle for the complete list
+      setAllCattle(cattleData as Cattle[]);
 
       const locationCounts: { [key: string]: number } = {
         Feeding: 0,
@@ -68,7 +79,7 @@ const GpsTracking = () => {
         Resting: 0
       };
 
-      const cattleByLocation: { [key: string]: Array<any> } = {
+      const cattleByLocation: { [key: string]: Array<Cattle> } = {
         Feeding: [],
         Water: [],
         Resting: []
@@ -89,10 +100,7 @@ const GpsTracking = () => {
       cattleData?.forEach(cattle => {
         if (cattle.location && locationCounts.hasOwnProperty(cattle.location)) {
           locationCounts[cattle.location]++;
-          cattleByLocation[cattle.location].push({
-            ...cattle,
-            tag_number: cattle.tag_number.padStart(6, '0')
-          });
+          cattleByLocation[cattle.location].push(cattle as Cattle);
           
           const gpsData = Array.isArray(cattle.gps_tracking) ? 
             cattle.gps_tracking[0] : cattle.gps_tracking;
@@ -182,6 +190,17 @@ const GpsTracking = () => {
     toast.info(autoRefresh ? 'Auto-refresh disabled' : 'Auto-refresh enabled');
   };
 
+  const getHealthStatusColor = (status: string) => {
+    switch (status) {
+      case 'Healthy':
+        return 'bg-green-100 text-green-800';
+      case 'Critical':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
+  };
+
   return (
     <div className="animate-fade-in space-y-6 p-6">
       <div className="flex items-center justify-between">
@@ -190,6 +209,14 @@ const GpsTracking = () => {
           <p className="text-muted-foreground mt-1">GPS and Sensor Data</p>
         </div>
         <div className="flex gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setShowCattleList(!showCattleList)}
+            className={showCattleList ? 'bg-primary/10' : ''}
+          >
+            <List className="w-4 h-4 mr-2" />
+            {showCattleList ? 'Hide' : 'Show'} All Cattle
+          </Button>
           <Button
             variant="outline"
             onClick={toggleAutoRefresh}
@@ -211,6 +238,47 @@ const GpsTracking = () => {
           </Button>
         </div>
       </div>
+
+      {showCattleList && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <List className="w-5 h-5" />
+              Complete Cattle List
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[300px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tag #</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Temperature</TableHead>
+                    <TableHead>Weight</TableHead>
+                    <TableHead>Health Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allCattle.map((cow) => (
+                    <TableRow key={cow.id}>
+                      <TableCell className="font-medium">{cow.tag_number}</TableCell>
+                      <TableCell>{cow.location}</TableCell>
+                      <TableCell>{cow.temperature}°C</TableCell>
+                      <TableCell>{cow.weight} kg</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getHealthStatusColor(cow.health_status)}`}>
+                          {cow.health_status}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 md:grid-cols-3">
         {locations.map((location) => (
@@ -235,22 +303,21 @@ const GpsTracking = () => {
                     <ScrollArea className="h-[400px] mt-4">
                       <div className="space-y-4">
                         {location.cattle.map((cow) => (
-                          <div key={cow.tag_number} className="p-4 border rounded-lg">
+                          <div key={cow.id} className="p-4 border rounded-lg">
                             <div className="flex justify-between items-center">
                               <h3 className="font-medium">Tag #{cow.tag_number}</h3>
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                cow.health_status === 'Healthy' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : cow.health_status === 'Critical'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getHealthStatusColor(cow.health_status)}`}>
                                 {cow.health_status}
                               </span>
                             </div>
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Temperature: {cow.temperature}°C
-                            </p>
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                              <p className="text-sm text-muted-foreground">
+                                Temperature: {cow.temperature}°C
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Weight: {cow.weight} kg
+                              </p>
+                            </div>
                           </div>
                         ))}
                         {location.cattle.length === 0 && (

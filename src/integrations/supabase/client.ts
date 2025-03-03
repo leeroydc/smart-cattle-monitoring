@@ -19,3 +19,40 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     },
   },
 });
+
+// Type definitions for our custom tables
+export interface Cattle {
+  id: string;
+  tag_number: string;
+  temperature: number;
+  weight: number;
+  health_status: 'Healthy' | 'Under Treatment' | 'Critical';
+  location: 'Feeding' | 'Water' | 'Resting';
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GpsTracking {
+  id: string;
+  cattle_id: string;
+  battery_level: number;
+  signal_strength: number;
+  lat?: number;
+  lng?: number;
+  last_updated?: string;
+}
+
+export interface FeedDistribution {
+  id: string;
+  feed_type: string;
+  percentage: number;
+  details?: string;
+}
+
+export interface FeedingSchedule {
+  id: string;
+  feed_type: string;
+  time_of_day: string;
+  amount: number;
+  notes?: string;
+}
