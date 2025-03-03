@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,7 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, Cattle, castToType } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Eye, Trash2, Syringe, AlertCircle, HeartPulse } from 'lucide-react';
 import {
@@ -21,17 +22,6 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-
-interface Cattle {
-  id: string;
-  tag_number: string;
-  temperature: number;
-  weight: number;
-  health_status: string;
-  location: string;
-  created_at?: string;
-  updated_at?: string;
-}
 
 const CattleDetails = () => {
   const [cattle, setCattle] = useState<Cattle[]>([]);
@@ -87,16 +77,7 @@ const CattleDetails = () => {
       if (error) throw error;
 
       if (data) {
-        const formattedData: Cattle[] = data.map(record => ({
-          id: record.id,
-          tag_number: record.tag_number,
-          temperature: record.temperature || 37.5,
-          weight: record.weight || 500,
-          health_status: record.health_status || 'Healthy',
-          location: record.location || 'Resting',
-          created_at: record.created_at,
-          updated_at: record.updated_at
-        }));
+        const formattedData: Cattle[] = castToType<Cattle[]>(data);
         setCattle(formattedData);
         
         // Check for unhealthy cattle and add to notifications
@@ -113,7 +94,7 @@ const CattleDetails = () => {
         }
       }
     } catch (error: any) {
-      toast("Error: " + error.message);
+      toast.error("Error: " + error.message);
     }
   };
 
@@ -247,11 +228,11 @@ const CattleDetails = () => {
                           </div>
                           <div>
                             <p className="font-semibold">Created At</p>
-                            <p>{new Date(cow.created_at!).toLocaleDateString()}</p>
+                            <p>{cow.created_at ? new Date(cow.created_at).toLocaleDateString() : 'N/A'}</p>
                           </div>
                           <div>
                             <p className="font-semibold">Last Updated</p>
-                            <p>{new Date(cow.updated_at!).toLocaleDateString()}</p>
+                            <p>{cow.updated_at ? new Date(cow.updated_at).toLocaleDateString() : 'N/A'}</p>
                           </div>
                         </div>
                       </div>

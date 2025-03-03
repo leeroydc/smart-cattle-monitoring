@@ -30,6 +30,7 @@ export interface Cattle {
   location: 'Feeding' | 'Water' | 'Resting';
   created_at?: string;
   updated_at?: string;
+  gps_tracking?: GpsTracking | GpsTracking[];
 }
 
 export interface GpsTracking {
@@ -55,4 +56,9 @@ export interface FeedingSchedule {
   time_of_day: string;
   amount: number;
   notes?: string;
+}
+
+// This is a type helper for casting API responses to our defined types
+export function castToType<T>(data: any): T {
+  return data as T;
 }

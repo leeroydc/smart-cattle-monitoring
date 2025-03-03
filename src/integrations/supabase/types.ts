@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      cattle: {
+        Row: {
+          created_at: string | null
+          health_status: string | null
+          id: string
+          location: string | null
+          tag_number: string
+          temperature: number | null
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          health_status?: string | null
+          id?: string
+          location?: string | null
+          tag_number: string
+          temperature?: number | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          health_status?: string | null
+          id?: string
+          location?: string | null
+          tag_number?: string
+          temperature?: number | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
       course_modules: {
         Row: {
           course_id: string | null
@@ -129,6 +162,89 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_distribution: {
+        Row: {
+          details: string | null
+          feed_type: string
+          id: string
+          percentage: number | null
+        }
+        Insert: {
+          details?: string | null
+          feed_type: string
+          id?: string
+          percentage?: number | null
+        }
+        Update: {
+          details?: string | null
+          feed_type?: string
+          id?: string
+          percentage?: number | null
+        }
+        Relationships: []
+      }
+      feeding_schedule: {
+        Row: {
+          amount: number | null
+          feed_type: string
+          id: string
+          notes: string | null
+          time_of_day: string
+        }
+        Insert: {
+          amount?: number | null
+          feed_type: string
+          id?: string
+          notes?: string | null
+          time_of_day: string
+        }
+        Update: {
+          amount?: number | null
+          feed_type?: string
+          id?: string
+          notes?: string | null
+          time_of_day?: string
+        }
+        Relationships: []
+      }
+      gps_tracking: {
+        Row: {
+          battery_level: number | null
+          cattle_id: string | null
+          id: string
+          last_updated: string | null
+          lat: number | null
+          lng: number | null
+          signal_strength: number | null
+        }
+        Insert: {
+          battery_level?: number | null
+          cattle_id?: string | null
+          id?: string
+          last_updated?: string | null
+          lat?: number | null
+          lng?: number | null
+          signal_strength?: number | null
+        }
+        Update: {
+          battery_level?: number | null
+          cattle_id?: string | null
+          id?: string
+          last_updated?: string | null
+          lat?: number | null
+          lng?: number | null
+          signal_strength?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gps_tracking_cattle_id_fkey"
+            columns: ["cattle_id"]
+            isOneToOne: false
+            referencedRelation: "cattle"
             referencedColumns: ["id"]
           },
         ]

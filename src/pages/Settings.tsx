@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2, AlertCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, Cattle, castToType } from '@/integrations/supabase/client';
 
 interface AddCattleForm {
   tagNumber: string;
@@ -28,15 +27,6 @@ interface AddCattleForm {
   weight: number;
   healthStatus: 'Healthy' | 'Under Treatment' | 'Critical';
   location: 'Feeding' | 'Water' | 'Resting';
-}
-
-interface Cattle {
-  id: string;
-  tag_number: string;
-  temperature: number;
-  weight: number;
-  health_status: string;
-  location: string;
 }
 
 const Settings = () => {
@@ -68,7 +58,7 @@ const Settings = () => {
       if (error) throw error;
       
       if (data) {
-        setCattleList(data);
+        setCattleList(castToType<Cattle[]>(data));
       }
     } catch (error: any) {
       toast.error('Failed to fetch cattle list: ' + error.message);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +24,7 @@ import {
   Activity,
   List
 } from 'lucide-react';
-import { supabase, Cattle } from '@/integrations/supabase/client';
+import { supabase, Cattle, castToType } from '@/integrations/supabase/client';
 
 interface CattleLocation {
   area: 'Feeding' | 'Water' | 'Resting';
@@ -70,8 +69,8 @@ const GpsTracking = () => {
         throw cattleError;
       }
 
-      // Save all cattle for the complete list
-      setAllCattle(cattleData as Cattle[]);
+      const typedCattleData = castToType<Cattle[]>(cattleData);
+      setAllCattle(typedCattleData);
 
       const locationCounts: { [key: string]: number } = {
         Feeding: 0,
@@ -97,10 +96,10 @@ const GpsTracking = () => {
         Resting: []
       };
 
-      cattleData?.forEach(cattle => {
+      typedCattleData?.forEach(cattle => {
         if (cattle.location && locationCounts.hasOwnProperty(cattle.location)) {
           locationCounts[cattle.location]++;
-          cattleByLocation[cattle.location].push(cattle as Cattle);
+          cattleByLocation[cattle.location].push(cattle);
           
           const gpsData = Array.isArray(cattle.gps_tracking) ? 
             cattle.gps_tracking[0] : cattle.gps_tracking;

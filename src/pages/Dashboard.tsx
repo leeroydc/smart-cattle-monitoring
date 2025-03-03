@@ -9,14 +9,7 @@ import {
   Copyright, Scale, Heart 
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
-
-interface FeedDistribution {
-  id: string;
-  feed_type: string;
-  percentage: number;
-  details?: string;
-}
+import { supabase, FeedDistribution, Cattle, castToType } from '@/integrations/supabase/client';
 
 interface WeightData {
   range: string;
@@ -62,11 +55,12 @@ const Dashboard = () => {
       .select('*');
 
     if (cattleData) {
+      const typedData = castToType<Cattle[]>(cattleData);
       const stats = {
-        totalCattle: cattleData.length,
-        healthyCattle: cattleData.filter(c => c.health_status === 'Healthy').length,
-        sickCattle: cattleData.filter(c => c.health_status === 'Under Treatment').length,
-        readyForSale: cattleData.filter(c => c.health_status === 'Critical').length,
+        totalCattle: typedData.length,
+        healthyCattle: typedData.filter(c => c.health_status === 'Healthy').length,
+        sickCattle: typedData.filter(c => c.health_status === 'Under Treatment').length,
+        readyForSale: typedData.filter(c => c.health_status === 'Critical').length,
       };
       setCattleStats(stats);
     }
@@ -78,7 +72,8 @@ const Dashboard = () => {
       .select('*');
     
     if (data) {
-      const enrichedData = data.map(item => ({
+      const typedData = castToType<FeedDistribution[]>(data);
+      const enrichedData = typedData.map(item => ({
         ...item,
         details: getFeedDetails(item.feed_type)
       }));
@@ -92,6 +87,7 @@ const Dashboard = () => {
       .select('weight');
 
     if (cattleData) {
+      const typedData = castToType<{ weight: number }[]>(cattleData);
       const weightRanges: { [key: string]: number } = {
         '300-400kg': 0,
         '401-500kg': 0,
@@ -100,7 +96,7 @@ const Dashboard = () => {
         '700+kg': 0
       };
 
-      cattleData.forEach(cattle => {
+      typedData.forEach(cattle => {
         const weight = cattle.weight || 0;
         if (weight <= 400) weightRanges['300-400kg']++;
         else if (weight <= 500) weightRanges['401-500kg']++;
@@ -122,13 +118,14 @@ const Dashboard = () => {
       .select('health_status');
 
     if (cattleData) {
+      const typedData = castToType<{ health_status: string }[]>(cattleData);
       const healthCounts = {
         'Healthy': 0,
         'Under Treatment': 0,
         'Critical': 0
       };
 
-      cattleData.forEach(cattle => {
+      typedData.forEach(cattle => {
         if (cattle.health_status) {
           healthCounts[cattle.health_status as keyof typeof healthCounts]++;
         }
@@ -146,10 +143,10 @@ const Dashboard = () => {
     switch (feedType) {
       case 'Hay':
         return 'Rich in fiber, essential for digestion';
-      case 'Grass':
-        return 'Source of protein and nutrients';
-      case 'Grains':
+      case 'Grain':
         return 'Energy source for growth';
+      case 'Silage':
+        return 'Fermented feed for better nutrition';
       case 'Supplements':
         return 'Additional nutrients for health';
       default:
