@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +11,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Eye, Trash2, Syringe, AlertCircle, HeartPulse } from 'lucide-react';
+import { Eye, Trash2, Syringe } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,9 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
 
 interface Cattle {
   id: string;
@@ -39,48 +36,9 @@ const CattleDetails = () => {
   const [cattle, setCattle] = useState<Cattle[]>([]);
   const [selectedCattle, setSelectedCattle] = useState<Cattle | null>(null);
   const [isAdministeringMedicine, setIsAdministeringMedicine] = useState(false);
-  const [unhealthyNotifications, setUnhealthyNotifications] = useState<Cattle[]>([]);
-  const [notificationOpen, setNotificationOpen] = useState(false);
 
   useEffect(() => {
     fetchCattle();
-    
-    // Set up real-time listener for cattle health changes
-    const channel = supabase
-      .channel('cattle_health_changes')
-      .on(
-        'postgres_changes',
-        { 
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'cattle',
-          filter: 'health_status=in.(Under Treatment,Critical)'
-        },
-        (payload) => {
-          console.log('Health status change detected:', payload);
-          const updatedCattle = payload.new as Cattle;
-          
-          if (updatedCattle.health_status === 'Under Treatment' || updatedCattle.health_status === 'Critical') {
-            // Add to notifications if not already there
-            setUnhealthyNotifications(prev => {
-              if (!prev.some(c => c.id === updatedCattle.id)) {
-                toast({
-                  title: "Cattle health alert",
-                  description: `Cattle #${updatedCattle.tag_number} needs medical attention!`,
-                  variant: "destructive"
-                });
-                return [...prev, updatedCattle];
-              }
-              return prev;
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const fetchCattle = async () => {
@@ -101,23 +59,6 @@ const CattleDetails = () => {
         updated_at: record.updated_at
       }));
       setCattle(formattedData);
-      
-      // Check for unhealthy cattle and add to notifications
-      const unhealthyCattle = formattedData.filter(
-        c => c.health_status === 'Under Treatment' || c.health_status === 'Critical'
-      );
-      
-      if (unhealthyCattle.length > 0) {
-        setUnhealthyNotifications(unhealthyCattle);
-        // Only show toast notification on initial load if there are unhealthy cattle
-        if (unhealthyCattle.length > 0) {
-          toast({
-            title: "Unhealthy cattle detected",
-            description: `${unhealthyCattle.length} cattle need medical attention`,
-            variant: "destructive"
-          });
-        }
-      }
     }
   };
 
@@ -131,7 +72,6 @@ const CattleDetails = () => {
       if (error) throw error;
 
       setCattle(prevCattle => prevCattle.filter(cow => cow.id !== id));
-      setUnhealthyNotifications(prev => prev.filter(cow => cow.id !== id));
       toast.success('Record deleted successfully');
     } catch (error: any) {
       toast.error('Failed to delete record: ' + error.message);
@@ -151,29 +91,6 @@ const CattleDetails = () => {
       fetchCattle();
     }
     setIsAdministeringMedicine(false);
-  };
-
-  const handleTreatCattle = async (cattleId: string) => {
-    try {
-      const { error } = await supabase
-        .from('cattle')
-        .update({ health_status: 'Healthy' })
-        .eq('id', cattleId);
-
-      if (error) throw error;
-
-      // Update both lists
-      setCattle(prev => prev.map(cow => 
-        cow.id === cattleId ? { ...cow, health_status: 'Healthy' } : cow
-      ));
-      
-      // Remove from notifications
-      setUnhealthyNotifications(prev => prev.filter(cow => cow.id !== cattleId));
-      
-      toast.success('Treatment complete! Cattle is now healthy');
-    } catch (error: any) {
-      toast.error('Failed to update health status: ' + error.message);
-    }
   };
 
   const healthyCattle = cattle.filter((c) => c.health_status === 'Healthy');
@@ -314,69 +231,9 @@ const CattleDetails = () => {
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Cattle Details</h1>
-        <div className="flex items-center gap-4">
-          <Dialog open={notificationOpen} onOpenChange={setNotificationOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="relative">
-                <AlertCircle className="w-5 h-5" />
-                {unhealthyNotifications.length > 0 && (
-                  <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                    {unhealthyNotifications.length}
-                  </span>
-                )}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Cattle Health Alerts</DialogTitle>
-                <DialogDescription>
-                  The following cattle require medical attention
-                </DialogDescription>
-              </DialogHeader>
-              <div className="max-h-[300px] overflow-y-auto">
-                {unhealthyNotifications.length === 0 ? (
-                  <p className="text-center py-4 text-muted-foreground">No unhealthy cattle at the moment</p>
-                ) : (
-                  <div className="space-y-3 py-2">
-                    {unhealthyNotifications.map(cow => (
-                      <div key={cow.id} className="flex items-center justify-between p-3 border rounded-md">
-                        <div>
-                          <div className="font-medium flex items-center">
-                            <span className="mr-2">#{cow.tag_number}</span>
-                            {cow.health_status === 'Critical' ? (
-                              <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-                                Critical
-                              </span>
-                            ) : (
-                              <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                                Under Treatment
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Temperature: {cow.temperature}°C, Weight: {cow.weight}kg
-                          </div>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleTreatCattle(cow.id)}
-                          className="flex items-center gap-1"
-                        >
-                          <HeartPulse className="w-4 h-4 text-green-500" />
-                          <span>Treat</span>
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-          <Button variant="outline" onClick={() => window.history.back()}>
-            Back
-          </Button>
-        </div>
+        <Button variant="outline" onClick={() => window.history.back()}>
+          Back
+        </Button>
       </div>
 
       <Tabs defaultValue="all" className="w-full">

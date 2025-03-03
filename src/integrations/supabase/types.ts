@@ -9,154 +9,134 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      course_modules: {
-        Row: {
-          course_id: string | null
-          created_at: string | null
-          description: string | null
-          id: string
-          sort_order: number | null
-          title: string
-        }
-        Insert: {
-          course_id?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          sort_order?: number | null
-          title: string
-        }
-        Update: {
-          course_id?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          sort_order?: number | null
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "course_modules_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      courses: {
+      cattle: {
         Row: {
           created_at: string | null
-          description: string | null
-          duration: string | null
+          health_status: string | null
           id: string
-          instructor_id: string | null
-          level: string | null
-          price: number | null
-          thumbnail_url: string | null
-          title: string
+          location: string | null
+          tag_number: string
+          temperature: number | null
           updated_at: string | null
+          weight: number | null
         }
         Insert: {
           created_at?: string | null
-          description?: string | null
-          duration?: string | null
+          health_status?: string | null
           id?: string
-          instructor_id?: string | null
-          level?: string | null
-          price?: number | null
-          thumbnail_url?: string | null
-          title: string
+          location?: string | null
+          tag_number: string
+          temperature?: number | null
           updated_at?: string | null
+          weight?: number | null
         }
         Update: {
           created_at?: string | null
-          description?: string | null
-          duration?: string | null
+          health_status?: string | null
           id?: string
-          instructor_id?: string | null
-          level?: string | null
-          price?: number | null
-          thumbnail_url?: string | null
-          title?: string
+          location?: string | null
+          tag_number?: string
+          temperature?: number | null
           updated_at?: string | null
+          weight?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "courses_instructor_id_fkey"
-            columns: ["instructor_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      enrollments: {
+      feed_distribution: {
         Row: {
-          completed: boolean | null
-          completion_date: string | null
-          course_id: string | null
-          enrolled_at: string | null
+          created_at: string | null
+          feed_type: string
           id: string
-          user_id: string | null
+          percentage: number | null
         }
         Insert: {
-          completed?: boolean | null
-          completion_date?: string | null
-          course_id?: string | null
-          enrolled_at?: string | null
+          created_at?: string | null
+          feed_type: string
           id?: string
-          user_id?: string | null
+          percentage?: number | null
         }
         Update: {
-          completed?: boolean | null
-          completion_date?: string | null
-          course_id?: string | null
-          enrolled_at?: string | null
+          created_at?: string | null
+          feed_type?: string
           id?: string
-          user_id?: string | null
+          percentage?: number | null
+        }
+        Relationships: []
+      }
+      feeding_schedule: {
+        Row: {
+          amount_kg: number
+          created_at: string | null
+          id: string
+          meal_type: string
+          time_slot: string | null
+        }
+        Insert: {
+          amount_kg: number
+          created_at?: string | null
+          id?: string
+          meal_type: string
+          time_slot?: string | null
+        }
+        Update: {
+          amount_kg?: number
+          created_at?: string | null
+          id?: string
+          meal_type?: string
+          time_slot?: string | null
+        }
+        Relationships: []
+      }
+      gps_tracking: {
+        Row: {
+          battery_level: number | null
+          cattle_id: string | null
+          created_at: string | null
+          id: string
+          location: string | null
+          signal_strength: number | null
+        }
+        Insert: {
+          battery_level?: number | null
+          cattle_id?: string | null
+          created_at?: string | null
+          id?: string
+          location?: string | null
+          signal_strength?: number | null
+        }
+        Update: {
+          battery_level?: number | null
+          cattle_id?: string | null
+          created_at?: string | null
+          id?: string
+          location?: string | null
+          signal_strength?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "enrollments_course_id_fkey"
-            columns: ["course_id"]
+            foreignKeyName: "gps_tracking_cattle_id_fkey"
+            columns: ["cattle_id"]
             isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "enrollments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "cattle"
             referencedColumns: ["id"]
           },
         ]
       }
       profiles: {
         Row: {
-          avatar_url: string | null
-          bio: string | null
           created_at: string | null
-          full_name: string | null
           id: string
           role: string
           updated_at: string | null
         }
         Insert: {
-          avatar_url?: string | null
-          bio?: string | null
           created_at?: string | null
-          full_name?: string | null
           id: string
           role?: string
           updated_at?: string | null
         }
         Update: {
-          avatar_url?: string | null
-          bio?: string | null
           created_at?: string | null
-          full_name?: string | null
           id?: string
           role?: string
           updated_at?: string | null

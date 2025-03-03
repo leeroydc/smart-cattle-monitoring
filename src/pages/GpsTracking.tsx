@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
@@ -20,10 +20,7 @@ import {
   Satellite,
   Copyright,
   Eye,
-  Activity,
-  Timer,
-  Utensils,
-  Bed
+  Activity
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -40,226 +37,11 @@ interface CattleLocation {
   }>;
 }
 
-interface AreaDetailProps {
-  areaType: 'Feeding' | 'Water' | 'Resting';
-  isOpen: boolean;
-  onClose: () => void;
-  cattleData: CattleLocation | undefined;
-}
-
-const AreaDetailWindow: React.FC<AreaDetailProps> = ({ areaType, isOpen, onClose, cattleData }) => {
-  const [avgTemperature, setAvgTemperature] = useState<number>(0);
-  const [healthyCount, setHealthyCount] = useState<number>(0);
-  const [warningCount, setWarningCount] = useState<number>(0);
-  const [criticalCount, setCriticalCount] = useState<number>(0);
-  
-  useEffect(() => {
-    if (cattleData && cattleData.cattle.length > 0) {
-      // Calculate average temperature
-      const totalTemp = cattleData.cattle.reduce((sum, cow) => sum + (cow.temperature || 0), 0);
-      setAvgTemperature(totalTemp / cattleData.cattle.length);
-      
-      // Count health statuses
-      const healthy = cattleData.cattle.filter(cow => cow.health_status === 'Healthy').length;
-      const warning = cattleData.cattle.filter(cow => cow.health_status === 'Warning').length;
-      const critical = cattleData.cattle.filter(cow => cow.health_status === 'Critical').length;
-      
-      setHealthyCount(healthy);
-      setWarningCount(warning);
-      setCriticalCount(critical);
-    }
-  }, [cattleData]);
-  
-  const getAreaIcon = () => {
-    switch (areaType) {
-      case 'Feeding':
-        return <Utensils className="w-6 h-6 text-yellow-500" />;
-      case 'Water':
-        return <Droplet className="w-6 h-6 text-blue-500" />;
-      case 'Resting':
-        return <Bed className="w-6 h-6 text-purple-500" />;
-      default:
-        return <MapPin className="w-6 h-6" />;
-    }
-  };
-  
-  const getAreaDescription = () => {
-    switch (areaType) {
-      case 'Feeding':
-        return "Cattle feeding stations with automated feed dispensers and monitoring systems.";
-      case 'Water':
-        return "Water troughs equipped with temperature and cleanliness sensors for optimal hydration.";
-      case 'Resting':
-        return "Designated resting area with comfortable bedding and temperature control for cattle recovery.";
-      default:
-        return "";
-    }
-  };
-  
-  const getAreaMetrics = () => {
-    switch (areaType) {
-      case 'Feeding':
-        return [
-          { name: "Feed Level", value: "73%", status: "normal" },
-          { name: "Consumption Rate", value: "4.2kg/hr", status: "normal" },
-          { name: "Last Refill", value: "2 hours ago", status: "normal" }
-        ];
-      case 'Water':
-        return [
-          { name: "Water Level", value: "81%", status: "normal" },
-          { name: "Water Temp", value: "18°C", status: "normal" },
-          { name: "Water Quality", value: "96%", status: "normal" }
-        ];
-      case 'Resting':
-        return [
-          { name: "Air Quality", value: "87%", status: "normal" },
-          { name: "Noise Level", value: "32dB", status: "normal" },
-          { name: "Capacity", value: "65%", status: "normal" }
-        ];
-      default:
-        return [];
-    }
-  };
-  
-  if (!isOpen) return null;
-  
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            {getAreaIcon()}
-            {areaType} Area Details
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-6">
-          <div className="p-4 bg-primary/5 rounded-lg">
-            <h3 className="font-medium mb-2">Overview</h3>
-            <p className="text-sm text-muted-foreground">{getAreaDescription()}</p>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <h3 className="font-medium">Cattle Statistics</h3>
-              <div className="p-3 bg-card rounded-lg border">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Total Cattle</span>
-                  <span className="font-medium">{cattleData?.count || 0}</span>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Avg Temperature</span>
-                  <span className="font-medium">{avgTemperature.toFixed(1)}°C</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Last Updated</span>
-                  <span className="text-xs">{cattleData ? new Date(cattleData.lastUpdate).toLocaleTimeString() : '-'}</span>
-                </div>
-              </div>
-              
-              <h3 className="font-medium mt-4">Health Status</h3>
-              <div className="p-3 bg-card rounded-lg border">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm flex items-center gap-1">
-                    <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-                    Healthy
-                  </span>
-                  <span className="font-medium">{healthyCount}</span>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm flex items-center gap-1">
-                    <span className="inline-block w-2 h-2 rounded-full bg-yellow-500"></span>
-                    Warning
-                  </span>
-                  <span className="font-medium">{warningCount}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm flex items-center gap-1">
-                    <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
-                    Critical
-                  </span>
-                  <span className="font-medium">{criticalCount}</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <h3 className="font-medium">Area Metrics</h3>
-              <div className="p-3 bg-card rounded-lg border">
-                {getAreaMetrics().map((metric, idx) => (
-                  <div key={idx} className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">{metric.name}</span>
-                    <span className={`font-medium ${
-                      metric.status === 'warning' ? 'text-yellow-500' : 
-                      metric.status === 'error' ? 'text-red-500' : 
-                      'text-green-500'
-                    }`}>{metric.value}</span>
-                  </div>
-                ))}
-              </div>
-              
-              <h3 className="font-medium mt-4">System Status</h3>
-              <div className="p-3 bg-card rounded-lg border">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Battery</span>
-                  <span className={`font-medium ${cattleData?.batteryLevel && cattleData.batteryLevel < 20 ? 'text-red-500' : 'text-green-500'}`}>
-                    {cattleData ? Math.round(cattleData.batteryLevel) : 0}%
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Signal</span>
-                  <span className={`font-medium ${cattleData?.signalStrength && cattleData.signalStrength < 50 ? 'text-yellow-500' : 'text-green-500'}`}>
-                    {cattleData ? Math.round(cattleData.signalStrength) : 0}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <h3 className="font-medium mb-2">Cattle List</h3>
-            <ScrollArea className="h-[200px]">
-              {cattleData && cattleData.cattle.length > 0 ? (
-                <div className="space-y-2">
-                  {cattleData.cattle.map((cow) => (
-                    <div key={cow.tag_number} className="p-3 border rounded-lg flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">Tag #{cow.tag_number}</p>
-                        <p className="text-sm text-muted-foreground">Temp: {cow.temperature}°C</p>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        cow.health_status === 'Healthy' 
-                          ? 'bg-green-100 text-green-800' 
-                          : cow.health_status === 'Critical'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {cow.health_status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-4">No cattle data available</p>
-              )}
-            </ScrollArea>
-          </div>
-        </div>
-        
-        <CardFooter className="flex justify-end pt-4">
-          <Button onClick={onClose}>Close</Button>
-        </CardFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
 const GpsTracking = () => {
   const [locations, setLocations] = useState<CattleLocation[]>([]);
   const [alerts, setAlerts] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [selectedArea, setSelectedArea] = useState<'Feeding' | 'Water' | 'Resting' | null>(null);
 
   const fetchLocations = async () => {
     setIsRefreshing(true);
@@ -400,17 +182,6 @@ const GpsTracking = () => {
     toast.info(autoRefresh ? 'Auto-refresh disabled' : 'Auto-refresh enabled');
   };
 
-  const openAreaDetails = (area: 'Feeding' | 'Water' | 'Resting') => {
-    setSelectedArea(area);
-  };
-
-  const closeAreaDetails = () => {
-    setSelectedArea(null);
-  };
-
-  // Find the selected area data
-  const selectedAreaData = locations.find(loc => loc.area === selectedArea);
-
   return (
     <div className="animate-fade-in space-y-6 p-6">
       <div className="flex items-center justify-between">
@@ -450,58 +221,47 @@ const GpsTracking = () => {
                   {getAreaIcon(location.area)}
                   <CardTitle>{location.area} Area</CardTitle>
                 </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => openAreaDetails(location.area)}
-                    className="flex items-center gap-1"
-                  >
-                    <Activity className="w-4 h-4" />
-                    Details
-                  </Button>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <Eye className="w-4 h-4" />
-                        View Cattle
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>{location.area} Area - Cattle Details</DialogTitle>
-                      </DialogHeader>
-                      <ScrollArea className="h-[400px] mt-4">
-                        <div className="space-y-4">
-                          {location.cattle.map((cow) => (
-                            <div key={cow.tag_number} className="p-4 border rounded-lg">
-                              <div className="flex justify-between items-center">
-                                <h3 className="font-medium">Tag #{cow.tag_number}</h3>
-                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                  cow.health_status === 'Healthy' 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : cow.health_status === 'Critical'
-                                    ? 'bg-red-100 text-red-800'
-                                    : 'bg-yellow-100 text-yellow-800'
-                                }`}>
-                                  {cow.health_status}
-                                </span>
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-2">
-                                Temperature: {cow.temperature}°C
-                              </p>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Eye className="w-4 h-4" />
+                      View Cattle
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>{location.area} Area - Cattle Details</DialogTitle>
+                    </DialogHeader>
+                    <ScrollArea className="h-[400px] mt-4">
+                      <div className="space-y-4">
+                        {location.cattle.map((cow) => (
+                          <div key={cow.tag_number} className="p-4 border rounded-lg">
+                            <div className="flex justify-between items-center">
+                              <h3 className="font-medium">Tag #{cow.tag_number}</h3>
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                cow.health_status === 'Healthy' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : cow.health_status === 'Critical'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {cow.health_status}
+                              </span>
                             </div>
-                          ))}
-                          {location.cattle.length === 0 && (
-                            <p className="text-center text-muted-foreground">
-                              No cattle in this area
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Temperature: {cow.temperature}°C
                             </p>
-                          )}
-                        </div>
-                      </ScrollArea>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+                          </div>
+                        ))}
+                        {location.cattle.length === 0 && (
+                          <p className="text-center text-muted-foreground">
+                            No cattle in this area
+                          </p>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -544,16 +304,6 @@ const GpsTracking = () => {
           </Card>
         ))}
       </div>
-
-      {/* Render area detail window if an area is selected */}
-      {selectedArea && (
-        <AreaDetailWindow
-          areaType={selectedArea}
-          isOpen={selectedArea !== null}
-          onClose={closeAreaDetails}
-          cattleData={selectedAreaData}
-        />
-      )}
 
       <Card className="mt-6">
         <CardHeader>
