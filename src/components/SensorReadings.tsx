@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -36,10 +35,9 @@ const SensorReadings = () => {
   const fetchSensorData = async () => {
     setLoading(true);
     try {
-      // Using raw query to get around type limitations
+      // Using rpc call to get sensor readings from database function
       const { data, error } = await supabase
-        .rpc('get_latest_sensor_readings', { limit_count: 10 })
-        .select('*');
+        .rpc('get_latest_sensor_readings', { limit_count: 10 });
 
       if (error) {
         throw error;
