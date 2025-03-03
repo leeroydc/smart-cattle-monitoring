@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, castToType } from '@/integrations/supabase/client';
 import { 
   Thermometer, 
   Droplet, 
@@ -36,17 +36,17 @@ const SensorReadings = () => {
   const fetchSensorData = async () => {
     setLoading(true);
     try {
+      // Using raw query to get around type limitations
       const { data, error } = await supabase
-        .from('sensor_readings')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .rpc('get_latest_sensor_readings', { limit_count: 10 })
+        .select('*');
 
       if (error) {
         throw error;
       }
 
-      setReadings(data || []);
+      // Cast the data to our expected type
+      setReadings(castToType<SensorReading[]>(data || []));
       setError(null);
     } catch (err: any) {
       console.error('Error fetching sensor data:', err);
@@ -71,7 +71,7 @@ const SensorReadings = () => {
           table: 'sensor_readings',
         },
         (payload) => {
-          setReadings((current) => [payload.new as SensorReading, ...current.slice(0, 9)]);
+          setReadings((current) => [castToType<SensorReading>(payload.new), ...current.slice(0, 9)]);
           toast.info('New sensor reading received');
         }
       )
