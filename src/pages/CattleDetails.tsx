@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,7 +21,6 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
 
 interface Cattle {
   id: string;
@@ -64,11 +62,7 @@ const CattleDetails = () => {
             // Add to notifications if not already there
             setUnhealthyNotifications(prev => {
               if (!prev.some(c => c.id === updatedCattle.id)) {
-                toast({
-                  title: "Cattle health alert",
-                  description: `Cattle #${updatedCattle.tag_number} needs medical attention!`,
-                  variant: "destructive"
-                });
+                toast("Cattle health alert - Cattle #" + updatedCattle.tag_number + " needs medical attention!");
                 return [...prev, updatedCattle];
               }
               return prev;
@@ -84,40 +78,42 @@ const CattleDetails = () => {
   }, []);
 
   const fetchCattle = async () => {
-    const { data, error } = await supabase
-      .from('cattle')
-      .select('*')
-      .order('tag_number', { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from('cattle')
+        .select('*')
+        .order('tag_number', { ascending: true });
 
-    if (data) {
-      const formattedData: Cattle[] = data.map(record => ({
-        id: record.id,
-        tag_number: record.tag_number,
-        temperature: record.temperature || 37.5,
-        weight: record.weight || 500,
-        health_status: record.health_status || 'Healthy',
-        location: record.location || 'Resting',
-        created_at: record.created_at,
-        updated_at: record.updated_at
-      }));
-      setCattle(formattedData);
-      
-      // Check for unhealthy cattle and add to notifications
-      const unhealthyCattle = formattedData.filter(
-        c => c.health_status === 'Under Treatment' || c.health_status === 'Critical'
-      );
-      
-      if (unhealthyCattle.length > 0) {
-        setUnhealthyNotifications(unhealthyCattle);
-        // Only show toast notification on initial load if there are unhealthy cattle
+      if (error) throw error;
+
+      if (data) {
+        const formattedData: Cattle[] = data.map(record => ({
+          id: record.id,
+          tag_number: record.tag_number,
+          temperature: record.temperature || 37.5,
+          weight: record.weight || 500,
+          health_status: record.health_status || 'Healthy',
+          location: record.location || 'Resting',
+          created_at: record.created_at,
+          updated_at: record.updated_at
+        }));
+        setCattle(formattedData);
+        
+        // Check for unhealthy cattle and add to notifications
+        const unhealthyCattle = formattedData.filter(
+          c => c.health_status === 'Under Treatment' || c.health_status === 'Critical'
+        );
+        
         if (unhealthyCattle.length > 0) {
-          toast({
-            title: "Unhealthy cattle detected",
-            description: `${unhealthyCattle.length} cattle need medical attention`,
-            variant: "destructive"
-          });
+          setUnhealthyNotifications(unhealthyCattle);
+          // Only show toast notification on initial load if there are unhealthy cattle
+          if (unhealthyCattle.length > 0) {
+            toast("Unhealthy cattle detected - " + unhealthyCattle.length + " cattle need medical attention");
+          }
         }
       }
+    } catch (error: any) {
+      toast("Error: " + error.message);
     }
   };
 
@@ -139,16 +135,18 @@ const CattleDetails = () => {
   };
 
   const handleAdministerMedicine = async (cattle: Cattle) => {
-    const { error } = await supabase
-      .from('cattle')
-      .update({ health_status: 'Under Treatment' })
-      .eq('id', cattle.id);
+    try {
+      const { error } = await supabase
+        .from('cattle')
+        .update({ health_status: 'Under Treatment' })
+        .eq('id', cattle.id);
 
-    if (error) {
-      toast.error('Failed to update treatment status');
-    } else {
+      if (error) throw error;
+      
       toast.success('Medicine administered successfully');
       fetchCattle();
+    } catch (error: any) {
+      toast.error('Failed to update treatment status: ' + error.message);
     }
     setIsAdministeringMedicine(false);
   };
