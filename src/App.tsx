@@ -14,6 +14,7 @@ import GpsTracking from "./pages/GpsTracking";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import SensorReadings from "./components/SensorReadings";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,16 @@ const App = () => (
               element={
                 <Layout>
                   <GpsTracking />
+                </Layout>
+              }
+            />
+            <Route
+              path="/sensors"
+              element={
+                <Layout>
+                  <div className="p-6">
+                    <SensorReadings />
+                  </div>
                 </Layout>
               }
             />
