@@ -77,6 +77,41 @@ export type Database = {
           },
         ]
       }
+      course_students: {
+        Row: {
+          course_id: string | null
+          id: string
+          join_date: string | null
+          profile_image: string | null
+          student_email: string
+          student_name: string
+        }
+        Insert: {
+          course_id?: string | null
+          id?: string
+          join_date?: string | null
+          profile_image?: string | null
+          student_email: string
+          student_name: string
+        }
+        Update: {
+          course_id?: string | null
+          id?: string
+          join_date?: string | null
+          profile_image?: string | null
+          student_email?: string
+          student_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_students_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           created_at: string | null
@@ -278,6 +313,44 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      student_grades: {
+        Row: {
+          assignment_name: string
+          course_id: string | null
+          feedback: string | null
+          grade: number | null
+          id: string
+          submission_date: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assignment_name: string
+          course_id?: string | null
+          feedback?: string | null
+          grade?: number | null
+          id?: string
+          submission_date?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assignment_name?: string
+          course_id?: string | null
+          feedback?: string | null
+          grade?: number | null
+          id?: string
+          submission_date?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_grades_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
