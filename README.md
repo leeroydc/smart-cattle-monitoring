@@ -1,69 +1,79 @@
-# Welcome to your Lovable project
 
-## Project info
+# Cattle Management System
 
-**URL**: https://lovable.dev/projects/08d73a75-e149-4e96-8563-aeddb8fd6f69
+A modern web application for monitoring and managing cattle using IoT sensors, GPS tracking, and advanced analytics.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- Real-time monitoring of cattle health and location
+- Temperature and weight tracking
+- Feed distribution management
+- Inventory tracking
+- Cattle health status management
 
-**Use Lovable**
+## Setup Instructions
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/08d73a75-e149-4e96-8563-aeddb8fd6f69) and start prompting.
+### Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js (v16 or higher)
+- npm or yarn
+- A Supabase account
 
-**Use your preferred IDE**
+### Installation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+1. Clone this repository
+```bash
+git clone https://github.com/yourusername/cattle-management-system.git
+cd cattle-management-system
 ```
 
-**Edit a file directly in GitHub**
+2. Install dependencies
+```bash
+npm install
+# or
+yarn install
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. Set up environment variables
+```bash
+cp .env.example .env
+```
+Edit the `.env` file and add your Supabase URL and anonymous key.
 
-**Use GitHub Codespaces**
+4. Set up Supabase
+   - Create a new Supabase project
+   - Execute the SQL scripts in the `supabase/migrations` directory to create the required tables
+   - Set up the required Edge Functions (see below)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+5. Start the development server
+```bash
+npm run dev
+# or
+yarn dev
+```
 
-## What technologies are used for this project?
+### Supabase Setup
 
-This project is built with .
+This application requires the following tables in your Supabase project:
+- cattle
+- feed_distribution
+- feeding_schedule
+- gps_tracking
+- sensor_readings (if using IoT sensors)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The Edge Function `sensor-data` needs to be deployed to your Supabase project.
 
-## How can I deploy this project?
+## Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/08d73a75-e149-4e96-8563-aeddb8fd6f69) and click on Share -> Publish.
+To build for production:
+```bash
+npm run build
+# or
+yarn build
+```
 
-## I want to use a custom domain - is that possible?
+The built files will be in the `dist` directory and can be deployed to any static hosting service.
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+## License
+
+MIT
