@@ -1,0 +1,379 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cattle Sensor Readings</title>
+  <!-- Include Tailwind CDN for styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Include Lucide icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-icons@0.16.29/dist/umd/lucide.min.css">
+  <style>
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <!-- Layout structure -->
+  <div class="flex min-h-screen bg-gray-50">
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-white shadow-lg">
+      <div class="flex h-full flex-col px-3 py-4">
+        <!-- Top section with profile and settings -->
+        <div class="mb-6 flex flex-col space-y-4 border-b pb-4">
+          <div class="flex justify-between">
+            <button class="p-2 rounded-lg hover:bg-gray-100">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </button>
+            <button class="p-2 rounded-lg hover:bg-gray-100">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="text-sm font-medium text-gray-500 text-center">
+            Rancher Account
+          </div>
+        </div>
+
+        <!-- Navigation links -->
+        <nav class="flex-1 space-y-2">
+          <a href="#" class="flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+            Home
+          </a>
+          <a href="#" class="flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+            Cattle Details
+          </a>
+          <a href="#" class="flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/></svg>
+            Inventory
+          </a>
+          <a href="#" class="flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            GPS Tracking
+          </a>
+          <a href="#" class="flex items-center rounded-lg px-3 py-2 text-sm font-medium bg-blue-600 text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>
+            Sensor Readings
+          </a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="flex-1 pl-64">
+      <!-- Top bar -->
+      <header class="sticky top-0 z-30 flex h-16 items-center justify-end border-b bg-white px-6">
+        <button class="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-gray-100">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+          Logout
+        </button>
+      </header>
+
+      <!-- Page content -->
+      <main class="px-6 py-6">
+        <div class="p-6">
+          <!-- Sensor Readings Component -->
+          <div class="space-y-6 animate-fade-in">
+            <div class="flex justify-between items-center">
+              <h2 class="text-2xl font-bold">Sensor Readings</h2>
+              <button class="px-4 py-2 border rounded-md hover:bg-gray-50 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                Refresh
+              </button>
+            </div>
+            
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <!-- Sensor Card 1 -->
+              <div class="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all bg-white">
+                <div class="p-4 border-b">
+                  <div class="flex justify-between items-center">
+                    <h3 class="text-base font-medium">Sensor Reading</h3>
+                    <span class="text-xs px-2 py-1 rounded-full border text-gray-500">
+                      May 15, 2023, 14:30:45
+                    </span>
+                  </div>
+                </div>
+                <div class="p-4 space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 mr-2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>
+                          <span>Temperature</span>
+                        </div>
+                        <span class="font-medium text-green-500">
+                          38.6°C
+                        </span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-green-500 h-1.5 rounded-full" style="width: 36%"></div>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 mr-2"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+                          <span>Humidity</span>
+                        </div>
+                        <span class="font-medium text-blue-500">
+                          65%
+                        </span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-blue-500 h-1.5 rounded-full" style="width: 65%"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 mr-2"><rect width="6" height="10" x="9" y="7" rx="2"/><line x1="5" x2="9" y1="10" y2="10"/><line x1="5" x2="9" y1="14" y2="14"/><line x1="14" x2="14" y1="4" y2="7"/><line x1="14" x2="14" y1="17" y2="20"/></svg>
+                          <span>Battery</span>
+                        </div>
+                        <span class="font-medium text-green-500">
+                          85%
+                        </span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-green-500 h-1.5 rounded-full" style="width: 85%"></div>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 mr-2"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>
+                          <span>Signal</span>
+                        </div>
+                        <span class="font-medium text-green-500">
+                          92%
+                        </span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-green-500 h-1.5 rounded-full" style="width: 92%"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="pt-2">
+                    <div class="flex items-center mb-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 mr-2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                      <span>Location</span>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      Lat: 35.123456, Lng: -118.654321
+                    </div>
+                  </div>
+
+                  <div class="text-xs text-gray-500 mt-2">
+                    Cattle ID: cw-42851
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sensor Card 2 -->
+              <div class="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all bg-white">
+                <div class="p-4 border-b">
+                  <div class="flex justify-between items-center">
+                    <h3 class="text-base font-medium">Sensor Reading</h3>
+                    <span class="text-xs px-2 py-1 rounded-full border text-gray-500">
+                      May 15, 2023, 14:15:22
+                    </span>
+                  </div>
+                </div>
+                <div class="p-4 space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500 mr-2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>
+                          <span>Temperature</span>
+                        </div>
+                        <span class="font-medium text-red-500">
+                          40.1°C
+                        </span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-red-500 h-1.5 rounded-full" style="width: 51%"></div>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 mr-2"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+                          <span>Humidity</span>
+                        </div>
+                        <span class="font-medium text-blue-500">
+                          75%
+                        </span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-blue-500 h-1.5 rounded-full" style="width: 75%"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 mr-2"><rect width="6" height="10" x="9" y="7" rx="2"/><line x1="5" x2="9" y1="10" y2="10"/><line x1="5" x2="9" y1="14" y2="14"/><line x1="14" x2="14" y1="4" y2="7"/><line x1="14" x2="14" y1="17" y2="20"/></svg>
+                          <span>Battery</span>
+                        </div>
+                        <span class="font-medium text-yellow-500">
+                          45%
+                        </span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-yellow-500 h-1.5 rounded-full" style="width: 45%"></div>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 mr-2"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>
+                          <span>Signal</span>
+                        </div>
+                        <span class="font-medium text-green-500">
+                          88%
+                        </span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-green-500 h-1.5 rounded-full" style="width: 88%"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="pt-2">
+                    <div class="flex items-center mb-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 mr-2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                      <span>Location</span>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      Lat: 35.127890, Lng: -118.659876
+                    </div>
+                  </div>
+
+                  <div class="text-xs text-gray-500 mt-2">
+                    Cattle ID: cw-42379
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sensor Card 3 -->
+              <div class="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all bg-white">
+                <div class="p-4 border-b">
+                  <div class="flex justify-between items-center">
+                    <h3 class="text-base font-medium">Sensor Reading</h3>
+                    <span class="text-xs px-2 py-1 rounded-full border text-gray-500">
+                      May 15, 2023, 14:05:19
+                    </span>
+                  </div>
+                </div>
+                <div class="p-4 space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 mr-2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>
+                          <span>Temperature</span>
+                        </div>
+                        <span class="font-medium text-blue-500">
+                          37.2°C
+                        </span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-blue-500 h-1.5 rounded-full" style="width: 22%"></div>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 mr-2"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+                          <span>Humidity</span>
+                        </div>
+                        <span class="font-medium text-green-500">
+                          50%
+                        </span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-green-500 h-1.5 rounded-full" style="width: 50%"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500 mr-2"><rect width="6" height="10" x="9" y="7" rx="2"/><line x1="5" x2="9" y1="10" y2="10"/><line x1="5" x2="9" y1="14" y2="14"/><line x1="14" x2="14" y1="4" y2="7"/><line x1="14" x2="14" y1="17" y2="20"/></svg>
+                          <span>Battery</span>
+                        </div>
+                        <span class="font-medium text-red-500">
+                          12%
+                        </span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-red-500 h-1.5 rounded-full" style="width: 12%"></div>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500 mr-2"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>
+                          <span>Signal</span>
+                        </div>
+                        <span class="font-medium text-yellow-500">
+                          65%
+                        </span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-yellow-500 h-1.5 rounded-full" style="width: 65%"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="pt-2">
+                    <div class="flex items-center mb-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500 mr-2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                      <span>Location</span>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      Lat: 35.121234, Lng: -118.662345
+                    </div>
+                  </div>
+
+                  <div class="text-xs text-gray-500 mt-2">
+                    Cattle ID: cw-42556
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
