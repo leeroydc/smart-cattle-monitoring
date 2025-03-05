@@ -27,7 +27,6 @@ import {
 import { supabase, Cattle, castToType } from '@/integrations/supabase/client';
 import SensorReadings from '@/components/SensorReadings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CattleLocationCounts from '@/components/CattleLocationCounts';
 
 interface CattleLocation {
   area: 'Feeding' | 'Water' | 'Resting';
@@ -237,8 +236,6 @@ const GpsTracking = () => {
           </Button>
         </div>
       </div>
-      
-      <CattleLocationCounts />
       
       <Tabs defaultValue="locations" className="w-full">
         <TabsList className="mb-4">
