@@ -314,6 +314,50 @@ export type Database = {
         }
         Relationships: []
       }
+      sensor_readings: {
+        Row: {
+          battery_level: number | null
+          cattle_id: string | null
+          created_at: string | null
+          humidity: number | null
+          id: string
+          lat: number | null
+          lng: number | null
+          signal_strength: number | null
+          temperature: number | null
+        }
+        Insert: {
+          battery_level?: number | null
+          cattle_id?: string | null
+          created_at?: string | null
+          humidity?: number | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          signal_strength?: number | null
+          temperature?: number | null
+        }
+        Update: {
+          battery_level?: number | null
+          cattle_id?: string | null
+          created_at?: string | null
+          humidity?: number | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          signal_strength?: number | null
+          temperature?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sensor_readings_cattle_id_fkey"
+            columns: ["cattle_id"]
+            isOneToOne: false
+            referencedRelation: "cattle"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_grades: {
         Row: {
           assignment_name: string
