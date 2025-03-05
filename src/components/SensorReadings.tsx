@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -36,18 +35,13 @@ const SensorReadings = () => {
   const fetchSensorData = async () => {
     setLoading(true);
     try {
-      // Fix: Adding proper typing to the RPC call
       const { data, error } = await supabase
-        .rpc('get_latest_sensor_readings', { limit_count: 10 }) as {
-          data: SensorReading[] | null;
-          error: any;
-        };
+        .rpc('get_latest_sensor_readings', { limit_count: 10 });
 
       if (error) {
         throw error;
       }
 
-      // Cast the data to our expected type
       setReadings(castToType<SensorReading[]>(data || []));
       setError(null);
     } catch (err: any) {
@@ -62,7 +56,6 @@ const SensorReadings = () => {
   useEffect(() => {
     fetchSensorData();
 
-    // Set up real-time subscription for new sensor readings
     const channel = supabase
       .channel('sensor_updates')
       .on(
