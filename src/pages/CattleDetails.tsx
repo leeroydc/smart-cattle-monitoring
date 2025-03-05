@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase, Cattle, castToType } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Eye, Trash2, Syringe, AlertCircle, HeartPulse } from 'lucide-react';
+import { Eye, Trash2, Syringe, AlertCircle, HeartPulse, Activity } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,8 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const CattleDetails = () => {
   const [cattle, setCattle] = useState<Cattle[]>([]);
@@ -155,6 +157,32 @@ const CattleDetails = () => {
     }
   };
 
+  // Generate activity status based on cattle health status
+  const getCattleActivities = (cow: Cattle) => {
+    if (cow.health_status === 'Healthy') {
+      return [
+        { name: 'Activity Level', status: 'Normal', icon: <Activity className="w-4 h-4 text-green-500" /> },
+        { name: 'Appetite', status: 'Normal', icon: <Activity className="w-4 h-4 text-green-500" /> },
+        { name: 'Water Intake', status: 'Normal', icon: <Activity className="w-4 h-4 text-green-500" /> },
+        { name: 'Rumination', status: 'Normal', icon: <Activity className="w-4 h-4 text-green-500" /> }
+      ];
+    } else if (cow.health_status === 'Under Treatment') {
+      return [
+        { name: 'Activity Level', status: 'Low', icon: <Activity className="w-4 h-4 text-yellow-500" /> },
+        { name: 'Appetite', status: 'Reduced', icon: <Activity className="w-4 h-4 text-yellow-500" /> },
+        { name: 'Water Intake', status: 'Normal', icon: <Activity className="w-4 h-4 text-green-500" /> },
+        { name: 'Rumination', status: 'Reduced', icon: <Activity className="w-4 h-4 text-yellow-500" /> }
+      ];
+    } else { // Critical
+      return [
+        { name: 'Activity Level', status: 'Very Low', icon: <Activity className="w-4 h-4 text-red-500" /> },
+        { name: 'Appetite', status: 'Poor', icon: <Activity className="w-4 h-4 text-red-500" /> },
+        { name: 'Water Intake', status: 'Reduced', icon: <Activity className="w-4 h-4 text-yellow-500" /> },
+        { name: 'Rumination', status: 'Poor', icon: <Activity className="w-4 h-4 text-red-500" /> }
+      ];
+    }
+  };
+
   const healthyCattle = cattle.filter((c) => c.health_status === 'Healthy');
   const sickCattle = cattle.filter((c) => c.health_status === 'Under Treatment');
   const criticalCattle = cattle.filter((c) => c.health_status === 'Critical');
@@ -204,7 +232,7 @@ const CattleDetails = () => {
                         <Eye className="w-4 h-4" />
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-lg">
                       <DialogHeader>
                         <DialogTitle>Cattle Details - Tag #{cow.tag_number}</DialogTitle>
                       </DialogHeader>
@@ -235,6 +263,37 @@ const CattleDetails = () => {
                             <p>{cow.updated_at ? new Date(cow.updated_at).toLocaleDateString() : 'N/A'}</p>
                           </div>
                         </div>
+                        
+                        {/* Activity Status Section */}
+                        <Card className="mt-4">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">Activity Status</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              {getCattleActivities(cow).map((activity, index) => (
+                                <div key={index} className="flex items-center justify-between border-b pb-2 last:border-0">
+                                  <div className="flex items-center gap-2">
+                                    {activity.icon}
+                                    <span>{activity.name}</span>
+                                  </div>
+                                  <Badge 
+                                    variant={activity.status === 'Normal' ? 'outline' : 'default'}
+                                    className={`${
+                                      activity.status === 'Normal' 
+                                        ? 'bg-green-100 text-green-800 hover:bg-green-100' 
+                                        : activity.status === 'Low' || activity.status === 'Reduced' 
+                                        ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
+                                        : 'bg-red-100 text-red-800 hover:bg-red-100'
+                                    }`}
+                                  >
+                                    {activity.status}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
                       </div>
                     </DialogContent>
                   </Dialog>
